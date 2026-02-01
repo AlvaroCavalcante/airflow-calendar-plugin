@@ -1,0 +1,26 @@
+{% extends "airflow/main.html" %}
+{% block content %}
+  <div id='calendar-container' style="background: white; padding: 20px;">
+    <div id='calendar'></div>
+  </div>
+
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var calendarEl = document.getElementById('calendar');
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek', // Visão semanal com horários
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: {{ events | tojson }},
+        eventClick: function(info) {
+          window.open("/dags/" + info.event.title + "/grid");
+        }
+      });
+      calendar.render();
+    });
+  </script>
+{% endblock %}
