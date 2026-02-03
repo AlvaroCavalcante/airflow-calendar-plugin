@@ -1,11 +1,16 @@
+import os
 from flask_appbuilder import BaseView, expose
 from airflow.models import DagModel
 from airflow.utils.session import provide_session
 from croniter import croniter
 from datetime import datetime, timedelta
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 class CalendarView(BaseView):
     default_view = "index"
+    template_folder = os.path.join(CURRENT_DIR, 'templates')
+    route_base = "/global_calendar"
 
     @expose("/")
     @provide_session
