@@ -11,6 +11,7 @@ class CalendarView(BaseView):
     default_view = "index"
     template_folder = os.path.join(CURRENT_DIR, 'templates')
     route_base = "/global_calendar"
+    base_permissions = ['can_list', 'menu_access']
 
     @expose("/")
     @provide_session
