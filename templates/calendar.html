@@ -16,6 +16,8 @@
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         events: {{ events | tojson }},
+        slotDuration: '00:15:00',
+        eventDisplay: 'block',
         eventClick: function(info) {
           window.open("/dags/" + info.event.title + "/grid");
         }
