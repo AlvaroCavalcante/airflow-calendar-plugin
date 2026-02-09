@@ -45,8 +45,9 @@ class CalendarView(BaseView):
             run_history = {
                 run.execution_date.isoformat(): run.state for run in dag_runs}
 
-            tags = session.query(DagTag).filter(
-                DagTag.dag_id == dag.dag_id).all()
+            # tags = session.query(DagTag).filter(
+            #     DagTag.dag_id == dag.dag_id).all()
+            tags = None
 
             bg_color = self._get_color_from_tag(
                 tags[0].name) if tags else "#3788d8"
