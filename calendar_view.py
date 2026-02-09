@@ -1,11 +1,12 @@
 import os
+import hashlib
 from croniter import croniter
 from datetime import datetime, timedelta
 
 from flask_appbuilder import BaseView, expose
-from airflow.models import DagModel, DagRun
+from airflow.models import DagModel, DagRun, DagTag
 from airflow.utils.session import provide_session
-from sqlalchemy import desc
+from airflow.utils import timezone
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -16,53 +17,71 @@ class CalendarView(BaseView):
     route_base = "/global_calendar"
     base_permissions = ['can_list', 'menu_access']
 
+    def _get_color_from_tag(self, tag_name):
+        hash_object = hashlib.md5(tag_name.encode())
+        return "#" + hash_object.hexdigest()[:6]
+
     @expose("/")
     @provide_session
     def index(self, session=None):
-        # 1. Buscar todas as DAGs ativas e não pausadas
         dags = session.query(DagModel).filter(
             DagModel.is_paused == False, DagModel.is_active == True).all()
 
         events = []
-        now = datetime.now()
+        now = timezone.utcnow()
+
+        lookback_days = 7
         lookahead_days = 7
+        start_search = now - timedelta(days=lookback_days)
+        end_search = now + timedelta(days=lookahead_days)
 
         for dag in dags:
-            # --- NOVO: Cálculo de Duração Média/Última ---
-            # Buscamos a última execução bem-sucedida para estimar a duração
-            last_run = session.query(DagRun).filter(
+            dag_runs = session.query(DagRun).filter(
                 DagRun.dag_id == dag.dag_id,
-                DagRun.state == 'success'
-            ).order_by(desc(DagRun.end_date)).first()
+                DagRun.execution_date >= start_search,
+                DagRun.execution_date <= end_search
+            ).all()
 
-            if last_run and last_run.end_date and last_run.start_date:
-                duration_seconds = (last_run.end_date -
-                                    last_run.start_date).total_seconds()
-            else:
-                duration_seconds = 300  # Default: 5 minutos se nunca rodou
+            run_history = {
+                run.execution_date.isoformat(): run.state for run in dag_runs}
 
-            # Garante uma duração mínima visual de 1 minuto no calendário
-            duration_seconds = max(duration_seconds, 300)
-            # ---------------------------------------------
+            tags = session.query(DagTag).filter(
+                DagTag.dag_id == dag.dag_id).all()
+
+            bg_color = self._get_color_from_tag(
+                tags[0].name) if tags else "#3788d8"
 
             if dag.schedule_interval and isinstance(dag.schedule_interval, str):
                 try:
-                    cron = croniter(dag.schedule_interval, now)
-                    for _ in range(100):
-                        next_run = cron.get_next(datetime)
-                        if next_run > now + timedelta(days=lookahead_days):
+                    cron = croniter(dag.schedule_interval, start_search)
+
+                    for _ in range(200):
+                        event_time = cron.get_next(datetime)
+
+                        if event_time > end_search:
                             break
 
-                        # Definimos o fim do evento baseado na duração estimada
-                        end_run = next_run + \
-                            timedelta(seconds=duration_seconds)
+                        current_iso = event_time.isoformat()
+                        status = run_history.get(current_iso, "no_run")
+
+                        border_color = "#808080"
+
+                        if event_time <= now:
+                            if status == 'success':
+                                border_color = "#28a745"  # Verde
+                            elif status == 'failed':
+                                border_color = "#dc3545"  # Vermelho
 
                         events.append({
                             "title": dag.dag_id,
-                            "start": next_run.isoformat(),
-                            "end": end_run.isoformat(),  # Adicionado o campo 'end'
-                            "allDay": False,
-                            "description": f"Duração estimada: {int(duration_seconds/60)}min"
+                            "start": current_iso,
+                            "end": (event_time + timedelta(minutes=10)).isoformat(),
+                            "backgroundColor": bg_color,
+                            "borderColor": border_color,
+                            "borderWidth": "3px",
+                            "extendedProps": {
+                                "status": status
+                            }
                         })
                 except Exception:
                     continue
