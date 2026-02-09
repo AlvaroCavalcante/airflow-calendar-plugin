@@ -68,9 +68,9 @@ class CalendarView(BaseView):
 
                         if event_time <= now:
                             if status == 'success':
-                                border_color = "#28a745"  # Verde
+                                border_color = "#28a745"
                             elif status == 'failed':
-                                border_color = "#dc3545"  # Vermelho
+                                border_color = "#dc3545"
 
                         events.append({
                             "title": dag.dag_id,
