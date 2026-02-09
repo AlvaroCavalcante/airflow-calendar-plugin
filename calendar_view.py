@@ -7,8 +7,11 @@ from flask_appbuilder import BaseView, expose
 from airflow.models import DagModel, DagRun, DagTag
 from airflow.utils.session import provide_session
 from airflow.utils import timezone
+from sqlalchemy import desc
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+IGNORED_DAGS = ["airflow_monitoring"]
 
 
 class CalendarView(BaseView):
@@ -36,6 +39,9 @@ class CalendarView(BaseView):
         end_search = now + timedelta(days=lookahead_days)
 
         for dag in dags:
+            if dag.dag_id in IGNORED_DAGS:
+                continue
+
             dag_runs = session.query(DagRun).filter(
                 DagRun.dag_id == dag.dag_id,
                 DagRun.execution_date >= start_search,
@@ -45,10 +51,24 @@ class CalendarView(BaseView):
             run_history = {
                 run.execution_date.isoformat(): run.state for run in dag_runs}
 
-            # tags = session.query(DagTag).filter(
-            #     DagTag.dag_id == dag.dag_id).all()
-            tags = None
+            recent_success_runs = session.query(DagRun).filter(
+                DagRun.dag_id == dag.dag_id,
+                DagRun.state == 'success',
+                DagRun.end_date.isnot(None)
+            ).order_by(desc(DagRun.end_date)).limit(5).all()
 
+            avg_seconds = 600
+            if recent_success_runs:
+                total_duration = sum(
+                    (run.end_date - run.start_date).total_seconds()
+                    for run in recent_success_runs
+                )
+                avg_seconds = total_duration / len(recent_success_runs)
+
+            avg_seconds = max(avg_seconds, 600)
+
+            # tags = session.query(DagTag).filter(DagTag.dag_id == dag.dag_id).all()
+            tags = None
             bg_color = self._get_color_from_tag(
                 tags[0].name) if tags else "#3788d8"
 
@@ -64,7 +84,6 @@ class CalendarView(BaseView):
 
                         current_iso = event_time.isoformat()
                         status = run_history.get(current_iso, "no_run")
-
                         border_color = "#808080"
 
                         if event_time <= now:
@@ -76,12 +95,13 @@ class CalendarView(BaseView):
                         events.append({
                             "title": dag.dag_id,
                             "start": current_iso,
-                            "end": (event_time + timedelta(minutes=10)).isoformat(),
+                            "end": (event_time + timedelta(seconds=avg_seconds)).isoformat(),
                             "backgroundColor": bg_color,
                             "borderColor": border_color,
                             "borderWidth": "3px",
                             "extendedProps": {
-                                "status": status
+                                "status": status,
+                                "avg_duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s"
                             }
                         })
                 except Exception:
