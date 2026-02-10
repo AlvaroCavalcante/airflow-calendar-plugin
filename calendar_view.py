@@ -101,7 +101,9 @@ class CalendarView(BaseView):
                             "borderWidth": "3px",
                             "extendedProps": {
                                 "status": status,
-                                "avg_duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s"
+                                "cron": dag.schedule_interval,
+                                "duration": f"{int(avg_seconds/60)}m {int(avg_seconds%60)}s",
+                                "dag_id": dag.dag_id
                             }
                         })
                 except Exception:

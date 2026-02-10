@@ -1,6 +1,18 @@
 {% extends "airflow/main.html" %}
 {% block content %}
   <style>
+    /* Melhora a legibilidade e evita eventos muito espremidos */
+    .fc-v-event { min-height: 25px !important; }
+    .fc-event-title { font-weight: bold; font-size: 0.85em; }
+    
+    /* Estilização do Modal para parecer com o Google Calendar */
+    .modal-content { border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .modal-header { border-bottom: none; padding: 20px 20px 10px; }
+    .modal-body { padding: 10px 20px 25px; }
+    .info-label { color: #5f6368; font-weight: 600; font-size: 0.9em; margin-top: 10px; }
+    .info-value { font-size: 1.1em; margin-bottom: 8px; }
+    .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; color: white; }
+
     .fc-event {
         border-style: solid !important;
         border-width: 2.5px !important;
@@ -9,7 +21,7 @@
         transition: transform 0.2s;
     }
     .fc-event:hover {
-        transform: scale(1.02);
+        transform: scale(1.03);
         z-index: 10;
         opacity: 1;
     }
@@ -20,8 +32,35 @@
     }
   </style>
 
-  <div id='calendar-container'>
+  <div id='calendar-container' style="background: white; padding: 20px; border-radius: 10px;">
     <div id='calendar'></div>
+  </div>
+
+  <div class="modal fade" id="eventModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h3 class="modal-title" id="modalDagId">ID da DAG</h3>
+        </div>
+        <div class="modal-body">
+          <div class="info-label">Horário de Execução:</div>
+          <div class="info-value" id="modalTime">---</div>
+
+          <div class="info-label">Expressão Cron:</div>
+          <div class="info-value"><code id="modalCron">---</code></div>
+
+          <div class="info-label">Duração Estimada:</div>
+          <div class="info-value" id="modalDuration">---</div>
+
+          <div class="info-label">Último Status:</div>
+          <div class="info-value"><span id="modalStatus" class="status-pill">---</span></div>
+
+          <hr>
+          <a id="modalDagLink" href="#" class="btn btn-primary btn-block" target="_blank">Abrir DAG no Airflow</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
@@ -41,8 +80,27 @@
         eventMouseEnter: function(info) {
             info.el.title = "Status: " + info.event.extendedProps.status;
         },
+        allDaySlot: false,
+        eventOverlap: true,
+
         eventClick: function(info) {
-          window.open("/dags/" + info.event.title + "/grid");
+          const props = info.event.extendedProps;
+          const eventTime = info.event.start.toLocaleString();
+
+          document.getElementById('modalDagId').innerText = props.dag_id;
+          document.getElementById('modalTime').innerText = eventTime;
+          document.getElementById('modalCron').innerText = props.cron;
+          document.getElementById('modalDuration').innerText = props.duration;
+          
+          const statusEl = document.getElementById('modalStatus');
+          statusEl.innerText = props.status.toUpperCase();
+          
+          const status_colors = { 'success': '#28a745', 'failed': '#dc3545', 'no_run': '#808080' };
+          statusEl.style.backgroundColor = status_colors[props.status] || '#808080';
+
+          document.getElementById('modalDagLink').href = "/dags/" + props.dag_id + "/grid";
+
+          $('#eventModal').modal('show');
         }
       });
       calendar.render();
