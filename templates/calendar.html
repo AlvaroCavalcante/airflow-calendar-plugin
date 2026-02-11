@@ -4,13 +4,7 @@
     /* Melhora a legibilidade e evita eventos muito espremidos */
     .fc-v-event { min-height: 25px !important; }
     .fc-event-title { font-weight: bold; font-size: 0.85em; }
-    
-    /* Estilização do Modal para parecer com o Google Calendar */
-    /* .modal-content { border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2); } */
-    /* .modal-header { border-bottom: none; padding: 20px 20px 10px; } */
-    /* .modal-body { padding: 10px 20px 25px; } */
-    /* .info-label { color: #5f6368; font-weight: 600; font-size: 0.9em; margin-top: 10px; }
-    .info-value { font-size: 1.1em; margin-bottom: 8px; } */
+
     .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; color: white; }
 
     /* Modal Estilo Floating Card (Google Calendar) */
@@ -85,20 +79,22 @@
           <h3 class="modal-title" id="modalDagId">DAG ID</h3>
         </div>
         <div class="modal-body">
-          <div class="info-label">Horário de Execução:</div>
+          <div class="info-label">Execution:</div>
           <div class="info-value" id="modalTime">---</div>
 
           <div class="info-label">Cron Expression:</div>
           <div class="info-value"><code id="modalCron">---</code></div>
 
-          <div class="info-label">Duração Estimada:</div>
+          <div class="info-label">Estimated Duration:</div>
           <div class="info-value" id="modalDuration">---</div>
 
           <div class="info-label">Last Status:</div>
           <div class="info-value"><span id="modalStatus" class="status-pill">---</span></div>
 
           <hr>
-          <a id="modalDagLink" href="#" class="btn btn-primary btn-block" target="_blank">Open DAG</a>
+            <a id="modalDagLink" href="#" class="btn btn-primary btn-block" target="_blank">
+                Open DAG <i class="fa fa-external-link" style="margin-left: 8px;"></i>
+            </a>
         </div>
       </div>
     </div>
@@ -144,11 +140,8 @@
 
           document.getElementById('modalDagLink').href = "/dags/" + props.dag_id + "/grid";
 
-          // --- LÓGICA DE POSICIONAMENTO ---
           const modalDialog = document.querySelector('#eventModal .modal-dialog');
 
-          // Pegamos a posição do clique (jsEvent)
-          
           modalDialog.style.visibility = 'hidden';
           modalDialog.style.display = 'block';
           const actualHeight = modalDialog.offsetHeight;
@@ -159,7 +152,6 @@
           let y = info.jsEvent.clientY;
 
           const modalWidth = 320;
-          // const modalHeight = 350; // Estimativa de altura do popup
           const viewWidth = window.innerWidth;
           const viewHeight = window.innerHeight;
 
