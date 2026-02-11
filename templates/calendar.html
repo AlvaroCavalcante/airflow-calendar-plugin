@@ -82,23 +82,23 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h3 class="modal-title" id="modalDagId">ID da DAG</h3>
+          <h3 class="modal-title" id="modalDagId">DAG ID</h3>
         </div>
         <div class="modal-body">
           <div class="info-label">Horário de Execução:</div>
           <div class="info-value" id="modalTime">---</div>
 
-          <div class="info-label">Expressão Cron:</div>
+          <div class="info-label">Cron Expression:</div>
           <div class="info-value"><code id="modalCron">---</code></div>
 
           <div class="info-label">Duração Estimada:</div>
           <div class="info-value" id="modalDuration">---</div>
 
-          <div class="info-label">Último Status:</div>
+          <div class="info-label">Last Status:</div>
           <div class="info-value"><span id="modalStatus" class="status-pill">---</span></div>
 
           <hr>
-          <a id="modalDagLink" href="#" class="btn btn-primary btn-block" target="_blank">Abrir DAG no Airflow</a>
+          <a id="modalDagLink" href="#" class="btn btn-primary btn-block" target="_blank">Open DAG</a>
         </div>
       </div>
     </div>
@@ -148,29 +148,32 @@
           const modalDialog = document.querySelector('#eventModal .modal-dialog');
 
           // Pegamos a posição do clique (jsEvent)
+          
+          modalDialog.style.visibility = 'hidden';
+          modalDialog.style.display = 'block';
+          const actualHeight = modalDialog.offsetHeight;
+          modalDialog.style.display = ''; 
+          modalDialog.style.visibility = '';
+
           let x = info.jsEvent.clientX;
           let y = info.jsEvent.clientY;
 
           const modalWidth = 320;
-          const modalHeight = 350; // Estimativa de altura do popup
+          // const modalHeight = 350; // Estimativa de altura do popup
           const viewWidth = window.innerWidth;
           const viewHeight = window.innerHeight;
 
           if (x + modalWidth > viewWidth) {
-            x = x - modalWidth - 10; 
+            x = x - modalWidth - 5; 
           } else {
-              x = x + 10;
+              x = x + 5;
           }
 
-          if (y + modalHeight > viewHeight) {
-            y = y - modalHeight - 10;
+          if (y + actualHeight > viewHeight) {
+            y = y - actualHeight - 5;
           } else {
-              y = y + 10;
+              y = y + 5;
           }
-
-          // Ajuste para o popup não sair da tela (offset)
-          // const windowWidth = window.innerWidth;
-          // if (x + 350 > windowWidth) { x = x - 330; } // Se perto da borda direita, abre para a esquerda
 
           modalDialog.style.left = x + "px";
           modalDialog.style.top = y + "px";
