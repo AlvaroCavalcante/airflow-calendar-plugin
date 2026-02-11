@@ -6,24 +6,65 @@
     .fc-event-title { font-weight: bold; font-size: 0.85em; }
     
     /* Estilização do Modal para parecer com o Google Calendar */
-    .modal-content { border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .modal-header { border-bottom: none; padding: 20px 20px 10px; }
-    .modal-body { padding: 10px 20px 25px; }
-    .info-label { color: #5f6368; font-weight: 600; font-size: 0.9em; margin-top: 10px; }
-    .info-value { font-size: 1.1em; margin-bottom: 8px; }
+    /* .modal-content { border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2); } */
+    /* .modal-header { border-bottom: none; padding: 20px 20px 10px; } */
+    /* .modal-body { padding: 10px 20px 25px; } */
+    /* .info-label { color: #5f6368; font-weight: 600; font-size: 0.9em; margin-top: 10px; }
+    .info-value { font-size: 1.1em; margin-bottom: 8px; } */
     .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; color: white; }
 
+    /* Modal Estilo Floating Card (Google Calendar) */
+    #eventModal.modal.fade .modal-dialog {
+        position: fixed; /* Permite posicionar onde quisermos */
+        margin: 0;
+        width: 320px; /* Largura menor e mais elegante */
+        z-index: 9999;
+        transition: none; /* Aparecimento instantâneo para parecer nativo */
+    }
+
+    .modal-content {
+        border-radius: 12px;
+        border: 1px solid #dadce0;
+        box-shadow: 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12);
+    }
+
+    .modal-backdrop {
+        display: none !important; /* Remove o fundo escuro para permitir ver o calendário atrás */
+    }
+
+    /* Estilos internos minimalistas */
+    .modal-header { padding: 12px 16px 0; border: none; }
+    .modal-body { padding: 0 16px 20px; }
+    .info-label { color: #70757a; font-size: 0.75rem; text-transform: uppercase; margin-top: 12px; }
+    .info-value { color: #3c4043; font-size: 0.95rem; font-weight: 400; }
+    .modal-header .close {
+        margin-top: -5px;
+        z-index: 10;
+    }
+    .modal-title {
+        font-size: 1.2rem !important; /* Fonte menor e equilibrada */
+        font-weight: 600;
+        color: #3c4043;
+        white-space: nowrap;    /* Não quebra linha */
+        overflow: hidden;       /* Esconde o excedente */
+        text-overflow: ellipsis; /* Adiciona os "..." */
+        display: block;
+        width: 90%;             /* Garante limite antes do botão 'X' */
+    }
+
     .fc-event {
+        cursor: pointer !important;
         border-style: solid !important;
         border-width: 2.5px !important;
         border-radius: 4px;
         opacity: 0.9;
-        transition: transform 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
     .fc-event:hover {
         transform: scale(1.03);
         z-index: 10;
         opacity: 1;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     #calendar-container {
         background: #f8f9fa;
@@ -91,14 +132,48 @@
           document.getElementById('modalTime').innerText = eventTime;
           document.getElementById('modalCron').innerText = props.cron;
           document.getElementById('modalDuration').innerText = props.duration;
-          
+
+          const titleEl = document.getElementById('modalDagId');
+          titleEl.innerText = props.dag_id;
+          titleEl.title = props.dag_id;
+
           const statusEl = document.getElementById('modalStatus');
           statusEl.innerText = props.status.toUpperCase();
-          
-          const status_colors = { 'success': '#28a745', 'failed': '#dc3545', 'no_run': '#808080' };
+          const status_colors = { 'success': '#1e8e3e', 'failed': '#d93025', 'no_run': '#70757a' };
           statusEl.style.backgroundColor = status_colors[props.status] || '#808080';
 
           document.getElementById('modalDagLink').href = "/dags/" + props.dag_id + "/grid";
+
+          // --- LÓGICA DE POSICIONAMENTO ---
+          const modalDialog = document.querySelector('#eventModal .modal-dialog');
+
+          // Pegamos a posição do clique (jsEvent)
+          let x = info.jsEvent.clientX;
+          let y = info.jsEvent.clientY;
+
+          const modalWidth = 320;
+          const modalHeight = 350; // Estimativa de altura do popup
+          const viewWidth = window.innerWidth;
+          const viewHeight = window.innerHeight;
+
+          if (x + modalWidth > viewWidth) {
+            x = x - modalWidth - 10; 
+          } else {
+              x = x + 10;
+          }
+
+          if (y + modalHeight > viewHeight) {
+            y = y - modalHeight - 10;
+          } else {
+              y = y + 10;
+          }
+
+          // Ajuste para o popup não sair da tela (offset)
+          // const windowWidth = window.innerWidth;
+          // if (x + 350 > windowWidth) { x = x - 330; } // Se perto da borda direita, abre para a esquerda
+
+          modalDialog.style.left = x + "px";
+          modalDialog.style.top = y + "px";
 
           $('#eventModal').modal('show');
         }
