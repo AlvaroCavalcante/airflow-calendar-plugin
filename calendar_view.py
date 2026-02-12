@@ -57,7 +57,7 @@ class CalendarView(BaseView):
                 DagRun.end_date.isnot(None)
             ).order_by(desc(DagRun.end_date)).limit(5).all()
 
-            avg_seconds = 600
+            avg_seconds = 300
             if recent_success_runs:
                 total_duration = sum(
                     (run.end_date - run.start_date).total_seconds()
@@ -65,7 +65,7 @@ class CalendarView(BaseView):
                 )
                 avg_seconds = total_duration / len(recent_success_runs)
 
-            avg_seconds = max(avg_seconds, 600)
+            avg_seconds = max(avg_seconds, 300)
 
             # tags = session.query(DagTag).filter(DagTag.dag_id == dag.dag_id).all()
             tags = None
