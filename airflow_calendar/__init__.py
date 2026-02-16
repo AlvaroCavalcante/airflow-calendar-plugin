@@ -1,5 +1,5 @@
 from airflow.plugins_manager import AirflowPlugin
-from global_calendar.calendar_view import CalendarView
+from airflow_calendar.calendar_view import CalendarView
 
 # Instanciando a view
 v_appbuilder_view = CalendarView()

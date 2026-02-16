@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="airflow-calendar",
-    version="0.1.0",
+    name="airflow_calendar", 
+    version="0.2.0",
     description="A sleek, Google Calendar-inspired global view for Apache Airflow DAGs.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -16,7 +16,7 @@ setup(
     ],
     entry_points={
         "airflow.plugins": [
-            "global_schedule = airflow_calendar_plugin:GlobalSchedulePlugin"
+            "airflow_calendar = airflow_calendar:GlobalSchedulePlugin"
         ],
     },
     classifiers=[
