@@ -29,3 +29,18 @@ cd airflow-calendar
 pip install .
 ```
 
+## Roadmap
+This project is still in its early stages, and there are many improvements planned for the future. Some of the features we're considering include:
+
+- Change event colors based on Dag Tags.
+- Search page to filter specific events and DAGs.
+
+If you’d like to suggest a feature or report a bug, please open a new issue!
+
+## Contributing
+This project is open to contributions! If you want to collaborate to improve the tool, please follow these steps:
+
+1.  Open a new issue to discuss the feature or bug you want to address.
+2.  Once approved, fork the repository and create a new branch.
+3.  Implement the changes.
+4.  Create a pull request with a detailed description of the changes.
