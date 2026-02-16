@@ -34,6 +34,7 @@ This project is still in its early stages, and there are many improvements plann
 
 - Change event colors based on Dag Tags.
 - Search page to filter specific events and DAGs.
+- Add a visual DAG execution history.
 
 If you’d like to suggest a feature or report a bug, please open a new issue!
 

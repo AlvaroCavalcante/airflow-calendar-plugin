@@ -17,7 +17,7 @@ IGNORED_DAGS = ["airflow_monitoring"]
 class CalendarView(BaseView):
     default_view = "index"
     template_folder = os.path.join(CURRENT_DIR, 'templates')
-    route_base = "/global_calendar"
+    route_base = "/airflow_calendar"
     base_permissions = ['can_list', 'menu_access']
 
     def _get_color_from_tag(self, tag_name):
