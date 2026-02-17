@@ -4,13 +4,15 @@ from croniter import croniter
 from datetime import datetime, timedelta
 
 from flask_appbuilder import BaseView, expose
-from airflow.models import DagModel, DagRun, DagTag
+from airflow import __version__ as airflow_version
+from sqlalchemy import and_, desc
+from airflow.models import DagModel, DagRun
 from airflow.utils.session import provide_session
 from airflow.utils import timezone
-from sqlalchemy import desc
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+IS_AIRFLOW_3 = airflow_version.startswith('3')
 IGNORED_DAGS = ["airflow_monitoring"]
 
 
@@ -27,12 +29,15 @@ class CalendarView(BaseView):
     @expose("/")
     @provide_session
     def index(self, session=None):
-        dags = session.query(DagModel).filter(
-            DagModel.is_paused == False, DagModel.is_active == True).all()
+        query = session.query(DagModel).filter(DagModel.is_paused == False)
+
+        if hasattr(DagModel, 'is_active'):
+            query = query.filter(DagModel.is_active == True)
+
+        dags = query.all()
 
         events = []
         now = timezone.utcnow()
-
         lookback_days = 7
         lookahead_days = 7
         start_search = now - timedelta(days=lookback_days)
@@ -49,7 +54,8 @@ class CalendarView(BaseView):
             ).all()
 
             run_history = {
-                run.execution_date.isoformat(): run.state for run in dag_runs}
+                run.execution_date.isoformat(): run.state for run in dag_runs
+            }
 
             recent_success_runs = session.query(DagRun).filter(
                 DagRun.dag_id == dag.dag_id,
@@ -67,10 +73,9 @@ class CalendarView(BaseView):
 
             avg_seconds = max(avg_seconds, 300)
 
-            # tags = session.query(DagTag).filter(DagTag.dag_id == dag.dag_id).all()
-            tags = None
-            bg_color = self._get_color_from_tag(
-                tags[0].name) if tags else "#3788d8"
+            bg_color = "#3788d8"
+            # if hasattr(dag, 'tags') and dag.tags:
+            #     bg_color = self._get_color_from_tag(dag.tags[0].name)
 
             if dag.schedule_interval and isinstance(dag.schedule_interval, str):
                 try:
@@ -102,7 +107,7 @@ class CalendarView(BaseView):
                             "extendedProps": {
                                 "status": status,
                                 "cron": dag.schedule_interval,
-                                "duration": f"{int(avg_seconds/60)}m {int(avg_seconds%60)}s",
+                                "duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s",
                                 "dag_id": dag.dag_id
                             }
                         })
