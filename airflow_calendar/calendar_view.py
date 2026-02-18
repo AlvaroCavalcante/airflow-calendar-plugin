@@ -29,8 +29,12 @@ class CalendarView(BaseView):
     @expose("/")
     @provide_session
     def index(self, session=None):
-        query = session.query(DagModel).filter(DagModel.is_paused == False)
+        if hasattr(DagRun, 'logical_date'):
+            date_col, date_attr = DagRun.logical_date, 'logical_date'
+        else:
+            date_col, date_attr = DagRun.execution_date, 'execution_date'
 
+        query = session.query(DagModel).filter(DagModel.is_paused == False)
         if hasattr(DagModel, 'is_active'):
             query = query.filter(DagModel.is_active == True)
 
@@ -38,23 +42,28 @@ class CalendarView(BaseView):
 
         events = []
         now = timezone.utcnow()
-        lookback_days = 7
-        lookahead_days = 7
-        start_search = now - timedelta(days=lookback_days)
-        end_search = now + timedelta(days=lookahead_days)
+        start_search = now - timedelta(days=7)
+        end_search = now + timedelta(days=7)
 
         for dag in dags:
             if dag.dag_id in IGNORED_DAGS:
                 continue
 
+            schedule = getattr(dag, 'schedule_interval', None)
+            if schedule is None:
+                schedule = getattr(dag, 'timetable_summary', None)
+
+            if schedule is None and hasattr(dag, 'schedule'):
+                schedule = dag.schedule
+
             dag_runs = session.query(DagRun).filter(
                 DagRun.dag_id == dag.dag_id,
-                DagRun.execution_date >= start_search,
-                DagRun.execution_date <= end_search
+                date_col >= start_search,
+                date_col <= end_search
             ).all()
 
             run_history = {
-                run.execution_date.isoformat(): run.state for run in dag_runs
+                getattr(run, date_attr).isoformat(): run.state for run in dag_runs
             }
 
             recent_success_runs = session.query(DagRun).filter(
@@ -65,21 +74,22 @@ class CalendarView(BaseView):
 
             avg_seconds = 300
             if recent_success_runs:
-                total_duration = sum(
-                    (run.end_date - run.start_date).total_seconds()
-                    for run in recent_success_runs
-                )
-                avg_seconds = total_duration / len(recent_success_runs)
+                durations = [(run.end_date - run.start_date).total_seconds()
+                             for run in recent_success_runs if run.start_date]
+                if durations:
+                    avg_seconds = sum(durations) / len(durations)
 
             avg_seconds = max(avg_seconds, 300)
 
             bg_color = "#3788d8"
             # if hasattr(dag, 'tags') and dag.tags:
-            #     bg_color = self._get_color_from_tag(dag.tags[0].name)
+            #     tag_name = dag.tags[0].name if hasattr(
+            #         dag.tags[0], 'name') else str(dag.tags[0])
+            #     bg_color = self._get_color_from_tag(tag_name)
 
-            if dag.schedule_interval and isinstance(dag.schedule_interval, str):
+            if schedule and isinstance(schedule, str) and croniter.is_valid(schedule):
                 try:
-                    cron = croniter(dag.schedule_interval, start_search)
+                    cron = croniter(schedule, start_search)
 
                     for _ in range(200):
                         event_time = cron.get_next(datetime)
@@ -106,7 +116,7 @@ class CalendarView(BaseView):
                             "borderWidth": "3px",
                             "extendedProps": {
                                 "status": status,
-                                "cron": dag.schedule_interval,
+                                "cron": schedule,
                                 "duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s",
                                 "dag_id": dag.dag_id
                             }
