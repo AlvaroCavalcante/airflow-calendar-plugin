@@ -29,10 +29,12 @@ class CalendarView(BaseView):
     @expose("/")
     @provide_session
     def index(self, session=None):
-        if hasattr(DagRun, 'logical_date'):
-            date_col, date_attr = DagRun.logical_date, 'logical_date'
+        if IS_AIRFLOW_3:
+            date_col = DagRun.logical_date
+            date_attr = 'logical_date'
         else:
-            date_col, date_attr = DagRun.execution_date, 'execution_date'
+            date_col = DagRun.execution_date
+            date_attr = 'execution_date'
 
         query = session.query(DagModel).filter(DagModel.is_paused == False)
         if hasattr(DagModel, 'is_active'):
