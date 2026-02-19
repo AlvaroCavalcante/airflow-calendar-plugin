@@ -94,9 +94,9 @@
           <div class="info-value"><span id="modalStatus" class="status-pill">---</span></div>
 
           <hr>
-            <a id="modalDagLink" href="#" class="btn btn-primary btn-block" target="_blank">
-                Open DAG <i class="fa fa-external-link" style="margin-left: 8px;"></i>
-            </a>
+            <button id="modalDagLink" class="btn btn-primary btn-block">
+              Open DAG <i class="fa fa-external-link" style="margin-left: 8px;"></i>
+            </button>
         </div>
       </div>
     </div>
@@ -125,22 +125,38 @@
         eventClick: function(info) {
           const props = info.event.extendedProps;
           const eventTime = info.event.start.toLocaleString();
+          const dagId = props.dag_id;
 
-          document.getElementById('modalDagId').innerText = props.dag_id;
+          document.getElementById('modalDagId').innerText = dagId;
           document.getElementById('modalTime').innerText = eventTime;
           document.getElementById('modalCron').innerText = props.cron;
           document.getElementById('modalDuration').innerText = props.duration;
 
           const titleEl = document.getElementById('modalDagId');
-          titleEl.innerText = props.dag_id;
-          titleEl.title = props.dag_id;
+          titleEl.innerText = dagId;
+          titleEl.title = dagId;
 
           const statusEl = document.getElementById('modalStatus');
           statusEl.innerText = props.status.toUpperCase();
           const status_colors = { 'success': '#1e8e3e', 'failed': '#d93025', 'no_run': '#70757a' };
           statusEl.style.backgroundColor = status_colors[props.status] || '#808080';
 
-          document.getElementById('modalDagLink').href = "/dags/" + props.dag_id + "/grid";
+          const targetUrl = `${window.location.origin}/dags/${dagId}`;
+          const dagLinkBtn = document.getElementById('modalDagLink');
+
+          const newDagLinkBtn = dagLinkBtn.cloneNode(true);
+          dagLinkBtn.parentNode.replaceChild(newDagLinkBtn, dagLinkBtn);
+
+          newDagLinkBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const newWindow = window.top.open(targetUrl, '_blank');
+
+            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                alert('Pop-up blocked! Please allow pop-ups for this site to open DAGs.');
+            }
+          });
 
           const modalDialog = document.querySelector('#eventModal .modal-dialog');
 
