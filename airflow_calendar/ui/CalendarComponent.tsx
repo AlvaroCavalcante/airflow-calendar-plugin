@@ -1,11 +1,11 @@
-// airflow_calendar/ui/CalendarComponent.tsx
 import React, { useEffect, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { EventClickArg } from '@fullcalendar/core';
 
-const CalendarComponent = () => {
+const CalendarComponent: React.FC = () => {
     const [events, setEvents] = useState([]);
 
     useEffect(() => {
@@ -15,13 +15,18 @@ const CalendarComponent = () => {
             .catch(err => console.error("Erro ao carregar eventos:", err));
     }, []);
 
-    const handleEventClick = (info) => {
+    const handleEventClick = (info: EventClickArg) => {
         const dagId = info.event.extendedProps.dag_id;
-        window.top.location.href = `/dags/${dagId}`;
+
+        if (window.top) {
+            window.top.location.href = `/dags/${dagId}`;
+        } else {
+            window.location.href = `/dags/${dagId}`;
+        }
     };
 
     return (
-        <div style={{ padding: '20px', background: 'var(--canvas-default)' }}>
+        <div style={{ padding: '20px', background: 'white' }}>
             <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
