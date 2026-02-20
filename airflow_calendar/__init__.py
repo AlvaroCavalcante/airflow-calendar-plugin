@@ -18,7 +18,7 @@ class GlobalSchedulePlugin(AirflowPlugin):
         from airflow_calendar.api import router
 
         fastapi_apps = [{
-            "router": router,
+            "app": "airflow_calendar.api:app", 
             "url_prefix": "/calendar",
             "name": "Calendar API"
         }]
