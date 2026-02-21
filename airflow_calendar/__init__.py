@@ -20,7 +20,13 @@ class GlobalSchedulePlugin(AirflowPlugin):
         fastapi_apps = [{
             "app": "airflow_calendar.api:app",
             "url_prefix": "/calendar",
-            "name": "Calendar API"
+            "name": "calendar_api"
+        }]
+
+        react_apps = [{
+            "name": "Calendar",
+            "bundle_url": "/airflow_calendar/static/airflow_calendar/calendar_bundle.iife.js",
+            "url_route": "calendar" 
         }]
 
         appbuilder_menu_items = [{
@@ -28,10 +34,4 @@ class GlobalSchedulePlugin(AirflowPlugin):
             "category": "Browse",
             "href": "/calendar",
             "label": "Calendar"
-        }]
-
-        ui_components = [{
-            "name": "Calendar",
-            "component": "CalendarComponent",
-            "path": "/static/airflow_calendar/calendar_bundle.iife.js",
         }]
