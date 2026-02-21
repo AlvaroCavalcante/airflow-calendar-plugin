@@ -33,5 +33,5 @@ class GlobalSchedulePlugin(AirflowPlugin):
         ui_components = [{
             "name": "Calendar",
             "component": "CalendarComponent",
-            "path": "/static/airflow_calendar/calendar_bundle.js",
+            "path": "/static/airflow_calendar/calendar_bundle.iife.js",
         }]

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -26,7 +27,7 @@ const CalendarComponent: React.FC = () => {
     };
 
     return (
-        <div style={{ padding: '20px', background: 'white' }}>
+        <div style={{ padding: '20px', background: 'white', height: '100vh' }}>
             <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="timeGridWeek"
@@ -37,10 +38,16 @@ const CalendarComponent: React.FC = () => {
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek'
                 }}
-                height="auto"
+                height="parent"
             />
         </div>
     );
 };
+
+const container = document.getElementById('root');
+if (container) {
+    const root = createRoot(container);
+    root.render(<CalendarComponent />);
+}
 
 export default CalendarComponent;

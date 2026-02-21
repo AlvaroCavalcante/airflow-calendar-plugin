@@ -27,20 +27,22 @@ def calendar_events(session: Session = Depends(get_session)):
 
 @app.get("/", response_class=HTMLResponse)
 def get_ui():
-    return """
+    js_path = "/static/plugins/airflow_calendar/calendar_bundle.iife.js"
+
+    return f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html>
     <head>
         <meta charset="UTF-8">
         <title>Airflow Calendar</title>
-        <script type="module" src="/static/airflow_calendar/calendar_bundle.js"></script>
+        <style>
+            body {{ margin: 0; background-color: #f0f2f5; font-family: sans-serif; }}
+            #root {{ height: 100vh; }}
+        </style>
     </head>
-    <body style="margin: 0; padding: 0; background: #f0f2f5;">
+    <body>
         <div id="root"></div>
-        <script>
-            // Pequeno script para garantir que o React monte no lugar certo
-            // Se o seu bundle exporta uma função de renderização, chame-a aqui.
-        </script>
+        <script src="{js_path}"></script>
     </body>
     </html>
     """
