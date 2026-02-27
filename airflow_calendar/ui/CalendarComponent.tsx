@@ -10,8 +10,11 @@ const CalendarComponent: React.FC = () => {
     const [events, setEvents] = useState([]);
 
     useEffect(() => {
-        fetch('/calendar/events')
-            .then(response => response.json())
+        fetch('/public/calendar/events')
+            .then(response => {
+                if (!response.ok) throw new Error("Erro na rede: " + response.status);
+                return response.json();
+            })
             .then(data => setEvents(data))
             .catch(err => console.error("Erro ao carregar eventos:", err));
     }, []);
@@ -44,10 +47,10 @@ const CalendarComponent: React.FC = () => {
     );
 };
 
-const container = document.getElementById('root');
-if (container) {
-    const root = createRoot(container);
-    root.render(<CalendarComponent />);
-}
+// const container = document.getElementById('root');
+// if (container) {
+//     const root = createRoot(container);
+//     root.render(<CalendarComponent />);
+// }
 
 export default CalendarComponent;

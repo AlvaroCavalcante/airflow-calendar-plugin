@@ -15,23 +15,23 @@ class GlobalSchedulePlugin(AirflowPlugin):
             "view": CalendarView()
         }]
     else:
-        from airflow_calendar.api import router
+        from airflow_calendar.api import app as calendar_api_app
 
         fastapi_apps = [{
-            "app": "airflow_calendar.api:app",
+            "app": calendar_api_app,
             "url_prefix": "/calendar",
             "name": "calendar_api"
         }]
 
         react_apps = [{
             "name": "Calendar",
-            "bundle_url": "/airflow_calendar/static/airflow_calendar/calendar_bundle.iife.js",
+            "bundle_url": "/calendar/static/airflow_calendar/calendar_bundle.iife.js",
             "url_route": "calendar" 
         }]
 
         appbuilder_menu_items = [{
             "name": "Calendar",
             "category": "Browse",
-            "href": "/calendar",
+            "href": "/plugins/calendar",
             "label": "Calendar"
         }]

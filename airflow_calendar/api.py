@@ -1,4 +1,6 @@
+import os
 from fastapi import FastAPI, APIRouter, Depends
+from fastapi.staticfiles import StaticFiles
 from airflow.utils.session import create_session
 from sqlalchemy.orm import Session
 
@@ -15,6 +17,12 @@ except ImportError:
                 yield session
 
 app = FastAPI(title="Calendar Plugin API")
+
+current_dir = os.path.dirname(__file__)
+static_dir = os.path.join(current_dir, "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 router = APIRouter(tags=["Calendar"])
 
 
