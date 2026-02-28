@@ -9,11 +9,11 @@
 
     /* Modal Estilo Floating Card (Google Calendar) */
     #eventModal.modal.fade .modal-dialog {
-        position: fixed; /* Permite posicionar onde quisermos */
+        position: fixed;
         margin: 0;
-        width: 320px; /* Largura menor e mais elegante */
+        width: 320px;
         z-index: 9999;
-        transition: none; /* Aparecimento instantâneo para parecer nativo */
+        transition: none;
     }
 
     .modal-content {
@@ -23,7 +23,7 @@
     }
 
     .modal-backdrop {
-        display: none !important; /* Remove o fundo escuro para permitir ver o calendário atrás */
+        display: none !important;
     }
 
     /* Estilos internos minimalistas */
@@ -36,14 +36,14 @@
         z-index: 10;
     }
     .modal-title {
-        font-size: 1.2rem !important; /* Fonte menor e equilibrada */
+        font-size: 1.2rem !important;
         font-weight: 600;
         color: #3c4043;
-        white-space: nowrap;    /* Não quebra linha */
-        overflow: hidden;       /* Esconde o excedente */
-        text-overflow: ellipsis; /* Adiciona os "..." */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         display: block;
-        width: 90%;             /* Garante limite antes do botão 'X' */
+        width: 90%;
     }
 
     .fc-event {
@@ -67,9 +67,21 @@
         border-radius: 10px;
         margin-bottom: 300px;
     }
+
+    .fc-event-main {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .task-count-badge {
+        font-size: 0.7rem;
+        display: block;
+        margin-top: 1px;
+        white-space: nowrap;
+    }
+
   </style>
 
-  <div id='calendar-container' style="background: white; padding: 20px; border-radius: 10px;">
+  <div id='calendar-container'>
     <div id='calendar'></div>
   </div>
 
@@ -83,6 +95,9 @@
         <div class="modal-body">
           <div class="info-label">Execution:</div>
           <div class="info-value" id="modalTime">---</div>
+
+          <div class="info-label">Tasks in DAG:</div>
+          <div class="info-value" id="modalTaskCount">---</div>
 
           <div class="info-label">Cron Expression:</div>
           <div class="info-value"><code id="modalCron">---</code></div>
@@ -116,6 +131,31 @@
         events: {{ events | tojson }},
         slotDuration: '00:15:00',
         eventDisplay: 'block',
+
+        eventContent: function(arg) {
+          let dag_id = arg.event.extendedProps.dag_id;
+          let task_count = arg.event.extendedProps.task_count || 0;
+          
+          let durationMs = arg.event.end - arg.event.start;
+          let durationMinutes = durationMs / (1000 * 60);
+  
+          let container = document.createElement('div');
+          container.style.overflow = 'hidden';
+          
+          let titleEl = document.createElement('b');
+          titleEl.innerText = dag_id;
+          container.appendChild(titleEl);
+  
+          if (durationMinutes >= 15) {
+              let subtitleEl = document.createElement('div');
+              subtitleEl.className = 'task-count-badge';
+              subtitleEl.innerHTML = `⚙️ ${task_count} tasks`;
+              container.appendChild(subtitleEl);
+          }
+  
+          return { domNodes: [container] };
+        },
+
         eventMouseEnter: function(info) {
             info.el.title = "Status: " + info.event.extendedProps.status;
         },
@@ -131,6 +171,9 @@
           document.getElementById('modalTime').innerText = eventTime;
           document.getElementById('modalCron').innerText = props.cron;
           document.getElementById('modalDuration').innerText = props.duration;
+
+          const count = (props.task_count !== undefined) ? props.task_count : '0';
+          document.getElementById('modalTaskCount').innerText = count + " tasks";
 
           const titleEl = document.getElementById('modalDagId');
           titleEl.innerText = dagId;

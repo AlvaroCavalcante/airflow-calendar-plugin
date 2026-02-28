@@ -7,6 +7,8 @@ from flask_appbuilder import BaseView, expose
 from airflow import __version__ as airflow_version
 from sqlalchemy import and_, desc
 from airflow.models import DagModel, DagRun
+from airflow.models.dagbag import DagBag
+from airflow.models.serialized_dag import SerializedDagModel
 from airflow.utils.session import provide_session
 from airflow.utils import timezone
 
@@ -41,6 +43,7 @@ class CalendarView(BaseView):
             query = query.filter(DagModel.is_active == True)
 
         dags = query.all()
+        dagbag = DagBag(read_dags_from_db=True)
 
         events = []
         now = timezone.utcnow()
@@ -50,6 +53,13 @@ class CalendarView(BaseView):
         for dag in dags:
             if dag.dag_id in IGNORED_DAGS:
                 continue
+
+            ser_dag = SerializedDagModel.get(dag.dag_id, session=session)
+            if ser_dag:
+                task_count = len(ser_dag.dag.tasks)
+            else:
+                loaded_dag = dagbag.get_dag(dag.dag_id)
+                task_count = len(loaded_dag.tasks) if loaded_dag else 0
 
             schedule = getattr(dag, 'schedule_interval', None)
             if schedule is None:
@@ -120,7 +130,8 @@ class CalendarView(BaseView):
                                 "status": status,
                                 "cron": schedule,
                                 "duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s",
-                                "dag_id": dag.dag_id
+                                "dag_id": dag.dag_id,
+                                "task_count": int(task_count)
                             }
                         })
                 except Exception:
