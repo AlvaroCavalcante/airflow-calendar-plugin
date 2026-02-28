@@ -1,0 +1,25 @@
+{
+    "name": "airflow-calendar-ui",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+      "dev": "vite",
+      "build": "tsc && vite build"
+    },
+    "dependencies": {
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0",
+      "@fullcalendar/react": "^6.1.8",
+      "@fullcalendar/daygrid": "^6.1.8",
+      "@fullcalendar/timegrid": "^6.1.8",
+      "@fullcalendar/interaction": "^6.1.8"
+    },
+    "devDependencies": {
+      "@types/react": "^18.2.0",
+      "@types/react-dom": "^18.2.0",
+      "@vitejs/plugin-react": "^4.0.0",
+      "typescript": "^5.0.0",
+      "vite": "^4.4.0"
+    }
+  }

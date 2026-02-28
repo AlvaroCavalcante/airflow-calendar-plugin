@@ -1,5 +1,8 @@
 .DS_Store
 
+node_modules
+airflow_calendar/static
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

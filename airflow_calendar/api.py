@@ -1,0 +1,33 @@
+import os
+from fastapi import FastAPI, APIRouter, Depends
+from fastapi.staticfiles import StaticFiles
+from airflow.utils.session import create_session
+from sqlalchemy.orm import Session
+
+from airflow_calendar.logic import get_calendar_events
+
+try:
+    from airflow.api_fastapi.common.db.common import get_session
+except ImportError:
+    try:
+        from airflow.api_fastapi.core.db.common import get_session
+    except ImportError:
+        def get_session():
+            with create_session() as session:
+                yield session
+
+app = FastAPI(title="Calendar Plugin API")
+
+current_dir = os.path.dirname(__file__)
+static_dir = os.path.join(current_dir, "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+router = APIRouter(tags=["Calendar"])
+
+
+@router.get("/events")
+def calendar_events(session: Session = Depends(get_session)):
+    return get_calendar_events(session)
+
+app.include_router(router)
