@@ -64,7 +64,8 @@ class CalendarView(BaseView):
             ).all()
 
             run_history = {
-                getattr(run, date_attr).isoformat(): run.state for run in dag_runs
+                getattr(run, date_attr).replace(tzinfo=None, microsecond=0).isoformat(): run.state
+                for run in dag_runs
             }
 
             recent_runs = session.query(DagRun).filter(
@@ -98,23 +99,19 @@ class CalendarView(BaseView):
 
                     for _ in range(200):
                         event_time = cron.get_next(datetime)
-
                         if event_time > end_search:
                             break
 
-                        current_iso = event_time.isoformat()
-                        status = run_history.get(current_iso, "no_run")
+                        current_iso_normalized = event_time.replace(
+                            tzinfo=None, microsecond=0).isoformat()
+                        status = run_history.get(
+                            current_iso_normalized, "no_run")
 
-                        border_color = "#808080"
-                        if event_time <= now:
-                            if status == 'success':
-                                border_color = "#28a745"
-                            elif status == 'failed':
-                                border_color = "#dc3545"
+                        border_color = self.get_border_color(status)
 
                         events.append({
                             "title": dag.dag_id,
-                            "start": current_iso,
+                            "start": event_time.isoformat(),
                             "end": (event_time + timedelta(seconds=avg_seconds)).isoformat(),
                             "backgroundColor": bg_color,
                             "borderColor": border_color,
@@ -132,6 +129,17 @@ class CalendarView(BaseView):
                     continue
 
         return self.render_template("calendar.html", events=events)
+
+    def get_border_color(self, status):
+        border_color = "#808080"
+
+        if status == 'success':
+            border_color = "#28a745"
+        elif status == 'failed':
+            border_color = "#dc3545"
+        elif status == 'running':
+            border_color = "#017cee"
+        return border_color
 
     def get_avg_execution_time(self, recent_success_runs):
         avg_seconds = 300
