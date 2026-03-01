@@ -201,17 +201,19 @@
           historyContainer.innerHTML = '';
 
           if (props.history && props.history.length > 0) {
-            props.history.forEach(state => {
+            props.history.forEach(run => {
                 const dot = document.createElement('div');
                 dot.className = 'history-dot';
 
-                if (state === 'success') dot.classList.add('dot-success');
-                else if (state === 'failed') dot.classList.add('dot-failed');
-                else if (state === 'running') dot.classList.add('dot-running');
-                else if (state === 'queued') dot.classList.add('dot-queued');
+                if (run.state === 'success') dot.classList.add('dot-success');
+                else if (run.state === 'failed') dot.classList.add('dot-failed');
+                else if (run.state === 'running') dot.classList.add('dot-running');
+                else if (run.state === 'queued') dot.classList.add('dot-queued');
                 else dot.classList.add('dot-other');
 
-                dot.title = state.toUpperCase();
+                dot.title = `Status: ${run.state.toUpperCase()}\nData: ${run.date}`;
+                dot.style.cursor = 'help';
+
                 historyContainer.appendChild(dot);
             });
           } else {

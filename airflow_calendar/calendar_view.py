@@ -81,7 +81,16 @@ class CalendarView(BaseView):
             #         dag.tags[0], 'name') else str(dag.tags[0])
             #     bg_color = self._get_color_from_tag(tag_name)
 
-            history_states = [run.state for run in reversed(recent_runs[:5])]
+            recent_execution_history = reversed(recent_runs[:5])
+
+            history_data = []
+            for run in recent_execution_history:
+                exec_date = getattr(run, date_attr)
+
+                history_data.append({
+                    "state": run.state,
+                    "date": exec_date.strftime('%d/%m/%Y %H:%M')
+                })
 
             if schedule and isinstance(schedule, str) and croniter.is_valid(schedule):
                 try:
@@ -116,7 +125,7 @@ class CalendarView(BaseView):
                                 "duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s",
                                 "dag_id": dag.dag_id,
                                 "task_count": int(task_count),
-                                "history": history_states
+                                "history": history_data
                             }
                         })
                 except Exception:
