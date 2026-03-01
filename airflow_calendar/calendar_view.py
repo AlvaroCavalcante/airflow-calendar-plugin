@@ -54,19 +54,8 @@ class CalendarView(BaseView):
             if dag.dag_id in IGNORED_DAGS:
                 continue
 
-            ser_dag = SerializedDagModel.get(dag.dag_id, session=session)
-            if ser_dag:
-                task_count = len(ser_dag.dag.tasks)
-            else:
-                loaded_dag = dagbag.get_dag(dag.dag_id)
-                task_count = len(loaded_dag.tasks) if loaded_dag else 0
-
-            schedule = getattr(dag, 'schedule_interval', None)
-            if schedule is None:
-                schedule = getattr(dag, 'timetable_summary', None)
-
-            if schedule is None and hasattr(dag, 'schedule'):
-                schedule = dag.schedule
+            task_count = self.get_dag_task_count(session, dagbag, dag)
+            schedule = self.get_schedule_info(dag)
 
             dag_runs = session.query(DagRun).filter(
                 DagRun.dag_id == dag.dag_id,
@@ -84,14 +73,7 @@ class CalendarView(BaseView):
                 DagRun.end_date.isnot(None)
             ).order_by(desc(DagRun.end_date)).limit(5).all()
 
-            avg_seconds = 300
-            if recent_success_runs:
-                durations = [(run.end_date - run.start_date).total_seconds()
-                             for run in recent_success_runs if run.start_date]
-                if durations:
-                    avg_seconds = sum(durations) / len(durations)
-
-            avg_seconds = max(avg_seconds, 300)
+            avg_seconds = self.get_avg_execution_time(recent_success_runs)
 
             bg_color = "#3788d8"
             # if hasattr(dag, 'tags') and dag.tags:
@@ -111,8 +93,8 @@ class CalendarView(BaseView):
 
                         current_iso = event_time.isoformat()
                         status = run_history.get(current_iso, "no_run")
-                        border_color = "#808080"
 
+                        border_color = "#808080"
                         if event_time <= now:
                             if status == 'success':
                                 border_color = "#28a745"
@@ -138,3 +120,32 @@ class CalendarView(BaseView):
                     continue
 
         return self.render_template("calendar.html", events=events)
+
+    def get_avg_execution_time(self, recent_success_runs):
+        avg_seconds = 300
+        if recent_success_runs:
+            durations = [(run.end_date - run.start_date).total_seconds()
+                         for run in recent_success_runs if run.start_date]
+            if durations:
+                avg_seconds = sum(durations) / len(durations)
+
+        avg_seconds = max(avg_seconds, 300)
+        return avg_seconds
+
+    def get_schedule_info(self, dag):
+        schedule = getattr(dag, 'schedule_interval', None)
+        if schedule is None:
+            schedule = getattr(dag, 'timetable_summary', None)
+
+        if schedule is None and hasattr(dag, 'schedule'):
+            schedule = dag.schedule
+        return schedule
+
+    def get_dag_task_count(self, session, dagbag, dag):
+        ser_dag = SerializedDagModel.get(dag.dag_id, session=session)
+        if ser_dag:
+            task_count = len(ser_dag.dag.tasks)
+        else:
+            loaded_dag = dagbag.get_dag(dag.dag_id)
+            task_count = len(loaded_dag.tasks) if loaded_dag else 0
+        return task_count
