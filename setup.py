@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="airflow_calendar", 
-    version="0.4.1",
+    version="0.5.0",
     description="A sleek, Google Calendar-inspired global view for Apache Airflow DAGs.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -13,6 +13,8 @@ setup(
     zip_safe=False,
     install_requires=[
         "apache-airflow>=2.0.0",
+        "croniter==5.0.1",
+        "fastapi"
     ],
     entry_points={
         "airflow.plugins": [
