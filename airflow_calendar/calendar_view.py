@@ -67,12 +67,12 @@ class CalendarView(BaseView):
                 getattr(run, date_attr).isoformat(): run.state for run in dag_runs
             }
 
-            recent_success_runs = session.query(DagRun).filter(
-                DagRun.dag_id == dag.dag_id,
-                DagRun.state == 'success',
-                DagRun.end_date.isnot(None)
-            ).order_by(desc(DagRun.end_date)).limit(5).all()
+            recent_runs = session.query(DagRun).filter(
+                DagRun.dag_id == dag.dag_id
+            ).order_by(desc(date_col)).limit(15).all()
 
+            recent_success_runs = [
+                run for run in recent_runs if run.state == 'success' and run.end_date][:5]
             avg_seconds = self.get_avg_execution_time(recent_success_runs)
 
             bg_color = "#3788d8"
@@ -81,10 +81,7 @@ class CalendarView(BaseView):
             #         dag.tags[0], 'name') else str(dag.tags[0])
             #     bg_color = self._get_color_from_tag(tag_name)
 
-            recent_runs_query = session.query(DagRun).filter(
-                DagRun.dag_id == dag.dag_id
-            ).order_by(desc(date_col)).limit(5).all()
-            history_states = [run.state for run in reversed(recent_runs_query)]
+            history_states = [run.state for run in reversed(recent_runs[:5])]
 
             if schedule and isinstance(schedule, str) and croniter.is_valid(schedule):
                 try:
