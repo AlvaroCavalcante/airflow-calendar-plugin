@@ -5,8 +5,6 @@
     .fc-v-event { min-height: 25px !important; }
     .fc-event-title { font-weight: bold; font-size: 0.85em; }
 
-    .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; color: white; }
-
     /* Modal Estilo Floating Card (Google Calendar) */
     #eventModal.modal.fade .modal-dialog {
         position: fixed;
@@ -79,6 +77,27 @@
         white-space: nowrap;
     }
 
+    .history-container {
+      display: flex;
+      gap: 8px;
+      margin-top: 5px;
+      align-items: center;
+    }
+
+    .history-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: inline-block;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .dot-success { background-color: #28a745; }
+    .dot-failed { background-color: #dc3545; }
+    .dot-running { background-color: #017cee; }
+    .dot-queued { background-color: #808080; }
+    .dot-other { background-color: #bebebe; }
+
   </style>
 
   <div id='calendar-container'>
@@ -105,8 +124,11 @@
           <div class="info-label">Estimated Duration:</div>
           <div class="info-value" id="modalDuration">---</div>
 
-          <div class="info-label">Last Status:</div>
-          <div class="info-value"><span id="modalStatus" class="status-pill">---</span></div>
+          <div class="info-label">Stats History (Last 5):</div>
+          <div class="info-value">
+            <div id="modalHistory" class="history-container">
+                </div>
+          </div>
 
           <hr>
             <button id="modalDagLink" class="btn btn-primary btn-block">
@@ -175,14 +197,30 @@
           const count = (props.task_count !== undefined) ? props.task_count : '0';
           document.getElementById('modalTaskCount').innerText = count + " tasks";
 
+          const historyContainer = document.getElementById('modalHistory');
+          historyContainer.innerHTML = '';
+
+          if (props.history && props.history.length > 0) {
+            props.history.forEach(state => {
+                const dot = document.createElement('div');
+                dot.className = 'history-dot';
+
+                if (state === 'success') dot.classList.add('dot-success');
+                else if (state === 'failed') dot.classList.add('dot-failed');
+                else if (state === 'running') dot.classList.add('dot-running');
+                else if (state === 'queued') dot.classList.add('dot-queued');
+                else dot.classList.add('dot-other');
+
+                dot.title = state.toUpperCase();
+                historyContainer.appendChild(dot);
+            });
+          } else {
+            historyContainer.innerHTML = '<span style="color:#70757a; font-size:0.8em;">No history available</span>';
+          }
+
           const titleEl = document.getElementById('modalDagId');
           titleEl.innerText = dagId;
           titleEl.title = dagId;
-
-          const statusEl = document.getElementById('modalStatus');
-          statusEl.innerText = props.status.toUpperCase();
-          const status_colors = { 'success': '#1e8e3e', 'failed': '#d93025', 'no_run': '#70757a' };
-          statusEl.style.backgroundColor = status_colors[props.status] || '#808080';
 
           const targetUrl = `${window.location.origin}/dags/${dagId}`;
           const dagLinkBtn = document.getElementById('modalDagLink');

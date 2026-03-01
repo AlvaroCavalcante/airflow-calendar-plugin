@@ -81,6 +81,11 @@ class CalendarView(BaseView):
             #         dag.tags[0], 'name') else str(dag.tags[0])
             #     bg_color = self._get_color_from_tag(tag_name)
 
+            recent_runs_query = session.query(DagRun).filter(
+                DagRun.dag_id == dag.dag_id
+            ).order_by(desc(date_col)).limit(5).all()
+            history_states = [run.state for run in reversed(recent_runs_query)]
+
             if schedule and isinstance(schedule, str) and croniter.is_valid(schedule):
                 try:
                     cron = croniter(schedule, start_search)
@@ -113,7 +118,8 @@ class CalendarView(BaseView):
                                 "cron": schedule,
                                 "duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s",
                                 "dag_id": dag.dag_id,
-                                "task_count": int(task_count)
+                                "task_count": int(task_count),
+                                "history": history_states
                             }
                         })
                 except Exception:
