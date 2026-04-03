@@ -1,47 +1,81 @@
 # 📅 Airflow Calendar
 
-A sleek, intuitive, and modern calendar interface for visualizing your global DAG schedule in Apache Airflow. Stop guessing when your DAGs will run; see them all in a high-fidelity time grid inspired by the Google Calendar experience.
+A modern and intuitive calendar interface for visualizing your DAG schedules in Apache Airflow. Stop guessing when your DAGs will run, see them all in a time grid inspired by the Google Calendar experience.
+
+![Airflow Calendar GIF](assets/airflow_calendar.gif)
 
 ---
 
+## 🎯 Why Airflow Calendar?
+
+Have you ever felt lost trying to keep track of your Airflow DAG schedules?
+
+When managing complex environments with dozens of DAGs, each with different execution requirements, losing control of your schedule is common.
+
+While Airflow provides features to visualize the execution history of individual DAGs, it lacks a "global" view to see all scheduled DAGs at once.
+
+This is where Airflow Calendar comes in. It provides a visual timeline of all your DAG schedules, allowing you to see at a glance when each DAG is set to run, identify potential overlaps, avoid resource conflicts, and manage concurrency and dependencies effectively.
+
+You can check more details about the project in the [Medium article](https://blog.dataengineerthings.org/airflow-calendar-improving-dag-management-with-a-visual-schedule-cd330df1d644).
+
 ## ✨ Key Features
 
-* **Global Timeline View**: Visualize all your DAG schedules in clear weekly or daily grids, making it easy to spot execution windows and potential load spikes.
+* **Timeline View**: Visualize all your DAG schedules in clear monthly, weekly or daily grids, making it easy to spot execution windows and potential load spikes.
 * **Smart Info-Popup**: Instant access to critical DAG run details upon clicking an event.
-    * Displays **Execution Time**, **Cron Expression**, **Estimated Duration**, and **Last Status**.
-* **Intelligent Viewport Positioning**: The popup automatically detects screen edges and flips its position (up/down/left/right) to prevent being cut off by the browser window or taskbar.
-* **Dynamic Precision**: Maintains close proximity to the mouse cursor for a better UX while ensuring no empty gaps between the event and the info card.
-* **Color-Coded Status**: Immediate visual identification of success, failure, or "no-run" states through dynamic colors and borders.
+    * Displays **Execution Time**, **Cron Expression**, **Estimated Duration**, and **Stats History (Last 5 runs)**.
+* **Color-Coded Status**: Immediate visual identification of success, failure, or "no-run" states through dynamic colors.
 * **Native Deep Linking**: Directly jump to the native Airflow Grid View for any specific DAG with a single click.
 
 ---
 
 ## 🚀 Installation
 
-The recommended way to install **Airflow Calendar** is via pip to ensure all templates and metadata are correctly registered.
+The recommended way to install **Airflow Calendar** is via pip. In your environment where Airflow is installed, run the following command:
 
 ```bash
-# Clone the repository
-git clone [https://github.com/your-user/airflow-calendar.git](https://github.com/your-user/airflow-calendar.git)
-cd airflow-calendar
-
-# Install the package
-pip install .
+pip install airflow-calendar
 ```
 
-## Roadmap
-This project is still in its early stages, and there are many improvements planned for the future. Some of the features we're considering include:
+Otherwise, you can also clone the repository and install it manually by moving the `airflow_calendar` directory to your Airflow plugins folder.
 
-- Change event colors based on Dag Tags.
-- Search page to filter specific events and DAGs.
-- Add a visual DAG execution history.
+> Note: You may need to restart your Airflow Webserver after installation for the plugin to be picked up.
 
-If you’d like to suggest a feature or report a bug, please open a new issue!
+If everything is set up correctly, you should see a new "Calendar" option under the "Browse" menu in the Airflow UI:
 
-## Contributing
-This project is open to contributions! If you want to collaborate to improve the tool, please follow these steps:
+![Calendar Menu Option](assets/calendar_menu.png)
 
-1.  Open a new issue to discuss the feature or bug you want to address.
-2.  Once approved, fork the repository and create a new branch.
-3.  Implement the changes.
-4.  Create a pull request with a detailed description of the changes.
+### ⚙️ Configuration & Permissions
+If the plugin is loaded but the Calendar option is not visible under the Browse menu, you likely need to grant permissions to your user role:
+
+1. Navigate to **Security > List Roles**.
+2. Edit your specific role (e.g., Admin, Op, or Viewer).
+3. Add the permission: ```menu access on Calendar```.
+4. Save and refresh the page.
+
+### 🔍 Troubleshooting
+If the "Calendar" option still doesn't show up in the menu:
+
+- **Check Plugin Status:** Go to Admin > Plugins. You should see ```airflow_calendar``` listed there.
+- **Logs:** If it's not listed, check your webserver logs.
+- **CLI:** Run ```airflow plugins``` in your terminal to verify if the package was loaded correctly into the environment and check for any errors during loading.
+
+---
+
+## 🛠️ Roadmap
+This project is in its early stages. Upcoming features include:
+
+[ ] **Airflow 3 Compatibility:** Support for the next generation of Airflow.
+[ ] **Tag-Based Filtering:** Filter calendar events using your existing DAG tags.
+[ ] **Dynamic Styling:** Background colors for events based on DAG tags.
+[ ] **Search functionality:** Quickly find specific events within the calendar.
+
+---
+
+## 🤝 Contributing
+
+This project is open to contributions! Whether it's reporting a bug, suggesting a feature, or submitting a Pull Request:
+
+1. Open an issue to discuss the change you wish to make.
+2. Fork the repository and create your feature branch.
+3. Commit your changes with clear descriptions.
+4. Push to the branch and open a Pull Request.
