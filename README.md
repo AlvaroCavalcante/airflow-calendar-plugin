@@ -1,6 +1,12 @@
 # 📅 Airflow Calendar
 
-A modern and intuitive calendar interface for visualizing your DAG schedules in Apache Airflow. Stop guessing when your DAGs will run, see them all in a time grid inspired by the Google Calendar experience.
+[![PyPI version](https://img.shields.io/pypi/v/airflow-calendar.svg)](https://pypi.org/project/airflow-calendar/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Downloads](https://img.shields.io/pypi/dm/airflow-calendar.svg)](https://pypi.org/project/airflow-calendar/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/airflow-calendar)
+[![Airflow](https://img.shields.io/badge/Airflow-2.x-red.svg)](https://airflow.apache.org/)
+
+A modern and intuitive calendar interface for visualizing your DAG schedules in Apache Airflow. Stop guessing when your DAGs will run; see them all in a time grid inspired by the Google Calendar experience.
 
 ![Airflow Calendar GIF](assets/airflow_calendar.gif)
 
@@ -20,7 +26,7 @@ You can check more details about the project in the [Medium article](https://blo
 
 ## ✨ Key Features
 
-* **Timeline View**: Visualize all your DAG schedules in clear monthly, weekly or daily grids, making it easy to spot execution windows and potential load spikes.
+* **Timeline View**: Visualize all your DAG schedules in clear monthly, weekly, or daily grids, making it easy to spot execution windows and potential load spikes.
 * **Smart Info-Popup**: Instant access to critical DAG run details upon clicking an event.
     * Displays **Execution Time**, **Cron Expression**, **Estimated Duration**, and **Stats History (Last 5 runs)**.
 * **Color-Coded Status**: Immediate visual identification of success, failure, or "no-run" states through dynamic colors.
@@ -64,10 +70,10 @@ If the "Calendar" option still doesn't show up in the menu:
 ## 🛠️ Roadmap
 This project is in its early stages. Upcoming features include:
 
-[ ] **Airflow 3 Compatibility:** Support for the next generation of Airflow.
-[ ] **Tag-Based Filtering:** Filter calendar events using your existing DAG tags.
-[ ] **Dynamic Styling:** Background colors for events based on DAG tags.
-[ ] **Search functionality:** Quickly find specific events within the calendar.
+- [ ] **Airflow 3 Compatibility:** Support for the next generation of Airflow.
+- [ ] **Tag-Based Filtering:** Filter calendar events using your existing DAG tags.
+- [ ] **Dynamic Styling:** Background colors for events based on DAG tags.
+- [ ] **Search functionality:** Quickly find specific events within the calendar.
 
 ---
 
