@@ -6,7 +6,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/airflow-calendar)
 [![Airflow](https://img.shields.io/badge/Airflow-2.x-red.svg)](https://airflow.apache.org/)
 
-A modern and intuitive calendar interface for visualizing your DAG schedules in Apache Airflow. Stop guessing when your DAGs will run; see them all in a time grid inspired by the Google Calendar experience.
+A modern and intuitive calendar interface for visualizing your DAG schedules in Apache Airflow. Transform complex cron expressions into a clear and searchable time grid inspired by the Google Calendar experience.
 
 ![Airflow Calendar GIF](assets/airflow_calendar.gif)
 
