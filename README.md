@@ -22,7 +22,7 @@ While Airflow provides features to visualize the execution history of individual
 
 This is where Airflow Calendar comes in. It provides a visual timeline of all your DAG schedules, allowing you to see at a glance when each DAG is set to run, identify potential overlaps, avoid resource conflicts, and manage concurrency and dependencies effectively.
 
-You can check more details about the project in the [Medium article](https://blog.dataengineerthings.org/airflow-calendar-improving-dag-management-with-a-visual-schedule-cd330df1d644).
+You can check more details about the project in the [Medium article](https://medium.com/data-engineer-things/airflow-calendar-improving-dag-management-with-a-visual-schedule-cd330df1d644).
 
 ## ✨ Key Features
 
