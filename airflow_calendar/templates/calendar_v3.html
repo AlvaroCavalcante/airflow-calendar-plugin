@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airflow Calendar</title>
+    
+    <!-- Dependências que o Airflow 2 trazia nativamente, agora importadas para o Airflow 3 -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <style>
+        /* Fundo suave para não ficar um brancão puro na tela inteira */
+        body {
+            background-color: transparent;
+            padding: 10px;
+        }
+
+        /* Melhora a legibilidade e evita eventos muito espremidos */
+        .fc-v-event { min-height: 25px !important; }
+        .fc-event-title { font-weight: bold; font-size: 0.85em; }
+
+        /* Modal Estilo Floating Card (Google Calendar) */
+        #eventModal.modal.fade .modal-dialog {
+            position: fixed;
+            margin: 0;
+            width: 320px;
+            z-index: 9999;
+            transition: none;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            border: 1px solid #dadce0;
+            box-shadow: 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12);
+        }
+
+        .modal-backdrop {
+            display: none !important;
+        }
+
+        /* Estilos internos minimalistas */
+        .modal-header { padding: 12px 16px 0; border: none; }
+        .modal-body { padding: 0 16px 20px; }
+        .info-label { color: #70757a; font-size: 0.75rem; text-transform: uppercase; margin-top: 12px; }
+        .info-value { color: #3c4043; font-size: 0.95rem; font-weight: 400; }
+        .modal-header .close { margin-top: -5px; z-index: 10; }
+        .modal-title {
+            font-size: 1.2rem !important;
+            font-weight: 600;
+            color: #3c4043;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            width: 90%;
+        }
+
+        .fc-event {
+            cursor: pointer !important;
+            border-style: solid !important;
+            border-width: 2.5px !important;
+            border-radius: 4px;
+            opacity: 0.9;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .fc-event:hover {
+            transform: scale(1.03);
+            z-index: 10;
+            opacity: 1;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        #calendar-container {
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .fc-event-main { overflow: hidden; text-overflow: ellipsis; }
+        .task-count-badge { font-size: 0.7rem; display: block; margin-top: 1px; white-space: nowrap; }
+        .history-container { display: flex; gap: 8px; margin-top: 5px; align-items: center; }
+        .history-dot {
+            width: 14px; height: 14px; border-radius: 50%;
+            display: inline-block; border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .dot-success { background-color: #28a745; }
+        .dot-failed { background-color: #dc3545; }
+        .dot-running { background-color: #017cee; }
+        .dot-queued { background-color: #808080; }
+        .dot-other { background-color: #bebebe; }
+    </style>
+</head>
+<body>
+
+    <div id='calendar-container'>
+        <div id='calendar'></div>
+    </div>
+
+    <!-- Seu Modal -->
+    <div class="modal fade" id="eventModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h3 class="modal-title" id="modalDagId">DAG ID</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="info-label">Execution:</div>
+                    <div class="info-value" id="modalTime">---</div>
+                    <div class="info-label">Tasks in DAG:</div>
+                    <div class="info-value" id="modalTaskCount">---</div>
+                    <div class="info-label">Cron Expression:</div>
+                    <div class="info-value"><code id="modalCron">---</code></div>
+                    <div class="info-label">Estimated Duration:</div>
+                    <div class="info-value" id="modalDuration">---</div>
+                    <div class="info-label">Stats History (Last 5):</div>
+                    <div class="info-value">
+                        <div id="modalHistory" class="history-container"></div>
+                    </div>
+                    <hr>
+                    <button id="modalDagLink" class="btn btn-primary btn-block">
+                        Open DAG <i class="fa fa-external-link-alt" style="margin-left: 8px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts de dependência para o Airflow 3 -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                // Jinja injeta os eventos aqui perfeitamente
+                events: {{ events | tojson }},
+                slotDuration: '00:15:00',
+                eventDisplay: 'block',
+
+                eventContent: function(arg) {
+                    let dag_id = arg.event.extendedProps.dag_id;
+                    let task_count = arg.event.extendedProps.task_count || 0;
+                    
+                    let durationMs = arg.event.end - arg.event.start;
+                    let durationMinutes = durationMs / (1000 * 60);
+            
+                    let container = document.createElement('div');
+                    container.style.overflow = 'hidden';
+                    
+                    let titleEl = document.createElement('b');
+                    titleEl.innerText = dag_id;
+                    container.appendChild(titleEl);
+            
+                    if (durationMinutes >= 15) {
+                        let subtitleEl = document.createElement('div');
+                        subtitleEl.className = 'task-count-badge';
+                        subtitleEl.innerHTML = `⚙️ ${task_count} tasks`;
+                        container.appendChild(subtitleEl);
+                    }
+            
+                    return { domNodes: [container] };
+                },
+
+                eventMouseEnter: function(info) {
+                    info.el.title = "Status: " + info.event.extendedProps.status;
+                },
+                allDaySlot: false,
+                eventOverlap: true,
+
+                eventClick: function(info) {
+                    const props = info.event.extendedProps;
+                    const eventTime = info.event.start.toLocaleString();
+                    const dagId = props.dag_id;
+
+                    document.getElementById('modalDagId').innerText = dagId;
+                    document.getElementById('modalTime').innerText = eventTime;
+                    document.getElementById('modalCron').innerText = props.cron;
+                    document.getElementById('modalDuration').innerText = props.duration;
+
+                    const count = (props.task_count !== undefined) ? props.task_count : '0';
+                    document.getElementById('modalTaskCount').innerText = count + " tasks";
+
+                    const historyContainer = document.getElementById('modalHistory');
+                    historyContainer.innerHTML = '';
+
+                    if (props.history && props.history.length > 0) {
+                        props.history.forEach(run => {
+                            const dot = document.createElement('div');
+                            dot.className = 'history-dot';
+
+                            if (run.state === 'success') dot.classList.add('dot-success');
+                            else if (run.state === 'failed') dot.classList.add('dot-failed');
+                            else if (run.state === 'running') dot.classList.add('dot-running');
+                            else if (run.state === 'queued') dot.classList.add('dot-queued');
+                            else dot.classList.add('dot-other');
+
+                            dot.title = `Status: ${run.state.toUpperCase()}\nData: ${run.date}`;
+                            dot.style.cursor = 'help';
+
+                            historyContainer.appendChild(dot);
+                        });
+                    } else {
+                        historyContainer.innerHTML = '<span style="color:#70757a; font-size:0.8em;">No history available</span>';
+                    }
+
+                    const titleEl = document.getElementById('modalDagId');
+                    titleEl.innerText = dagId;
+                    titleEl.title = dagId;
+
+                    // Ajuste da URL para o Airflow 3
+                    const targetUrl = `/dags/${dagId}`;
+                    const dagLinkBtn = document.getElementById('modalDagLink');
+
+                    const newDagLinkBtn = dagLinkBtn.cloneNode(true);
+                    dagLinkBtn.parentNode.replaceChild(newDagLinkBtn, dagLinkBtn);
+
+                    newDagLinkBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // No Airflow 3, targetUrl precisa considerar a rota principal
+                        window.top.open(targetUrl, '_blank');
+                    });
+
+                    const modalDialog = document.querySelector('#eventModal .modal-dialog');
+
+                    modalDialog.style.visibility = 'hidden';
+                    modalDialog.style.display = 'block';
+                    const actualHeight = modalDialog.offsetHeight;
+                    modalDialog.style.display = ''; 
+                    modalDialog.style.visibility = '';
+
+                    let x = info.jsEvent.clientX;
+                    let y = info.jsEvent.clientY;
+
+                    const modalWidth = 320;
+                    const viewWidth = window.innerWidth;
+                    const viewHeight = window.innerHeight;
+                    const buffer = 15;
+
+                    let finalX = x + 10;
+                    if (finalX + modalWidth > viewWidth - buffer) {
+                        finalX = x - modalWidth - 10;
+                    }
+
+                    let finalY = y + 10;
+                    if (finalY + actualHeight > viewHeight - buffer) {
+                        finalY = y - actualHeight - 10;
+                    }
+
+                    if (finalY < buffer) { finalY = buffer; }
+                    if (finalY + actualHeight > viewHeight - buffer) {
+                        finalY = viewHeight - actualHeight - buffer;
+                    }
+
+                    modalDialog.style.left = finalX + "px";
+                    modalDialog.style.top = finalY + "px";
+                    $('#eventModal').modal('show');
+                }
+            });
+            calendar.render();
+        });
+    </script>
+</body>
+</html>

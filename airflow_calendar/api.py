@@ -1,33 +1,165 @@
 import os
-from fastapi import FastAPI, APIRouter, Depends
-from fastapi.staticfiles import StaticFiles
-from airflow.utils.session import create_session
-from sqlalchemy.orm import Session
+import hashlib
+from croniter import croniter
+from datetime import datetime, timedelta
 
-from airflow_calendar.logic import get_calendar_events
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
-try:
-    from airflow.api_fastapi.common.db.common import get_session
-except ImportError:
-    try:
-        from airflow.api_fastapi.core.db.common import get_session
-    except ImportError:
-        def get_session():
-            with create_session() as session:
-                yield session
+from sqlalchemy import desc
+from airflow.models import DagModel, DagRun
+from airflow.models.dagbag import DagBag
+from airflow.models.serialized_dag import SerializedDagModel
+from airflow.utils.session import provide_session
+from airflow.utils import timezone
 
-app = FastAPI(title="Calendar Plugin API")
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+IGNORED_DAGS = ["airflow_monitoring"]
 
-current_dir = os.path.dirname(__file__)
-static_dir = os.path.join(current_dir, "static")
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+# Inicializa o app FastAPI
+app = FastAPI(title="Airflow Calendar")
 
-router = APIRouter(tags=["Calendar"])
+# Configura o motor de templates do Jinja2 para a pasta templates
+templates = Jinja2Templates(directory=os.path.join(CURRENT_DIR, 'templates'))
+
+# ===== Funções Auxiliares (Fora da classe agora) =====
 
 
-@router.get("/events")
-def calendar_events(session: Session = Depends(get_session)):
-    return get_calendar_events(session)
+def _get_color_from_tag(tag_name):
+    hash_object = hashlib.md5(tag_name.encode())
+    return "#" + hash_object.hexdigest()[:6]
 
-app.include_router(router)
+
+def get_border_color(status):
+    border_color = "#808080"
+    if status == 'success':
+        border_color = "#28a745"
+    elif status == 'failed':
+        border_color = "#dc3545"
+    elif status == 'running':
+        border_color = "#017cee"
+    return border_color
+
+
+def get_avg_execution_time(recent_success_runs):
+    avg_seconds = 300
+    if recent_success_runs:
+        durations = [(run.end_date - run.start_date).total_seconds()
+                     for run in recent_success_runs if run.start_date]
+        if durations:
+            avg_seconds = sum(durations) / len(durations)
+    return max(avg_seconds, 300)
+
+
+def get_schedule_info(dag):
+    schedule = getattr(dag, 'schedule_interval', None)
+    if schedule is None:
+        schedule = getattr(dag, 'timetable_summary', None)
+    if schedule is None and hasattr(dag, 'schedule'):
+        schedule = dag.schedule
+    return schedule
+
+
+def get_dag_task_count(session, dagbag, dag):
+    ser_dag = SerializedDagModel.get(dag.dag_id, session=session)
+    if ser_dag:
+        return len(ser_dag.dag.tasks)
+    loaded_dag = dagbag.get_dag(dag.dag_id)
+    return len(loaded_dag.tasks) if loaded_dag else 0
+
+# ===== Rota Principal =====
+
+
+@app.get("/", response_class=HTMLResponse)
+@provide_session
+def index(request: Request, session=None):
+
+    # Exclusivo do Airflow 3
+    date_col = DagRun.logical_date
+    date_attr = 'logical_date'
+
+    query = session.query(DagModel).filter(DagModel.is_paused == False)
+    if hasattr(DagModel, 'is_active'):
+        query = query.filter(DagModel.is_active == True)
+
+    dags = query.all()
+    dagbag = DagBag(read_dags_from_db=True)
+
+    events = []
+    now = timezone.utcnow()
+    start_search = now - timedelta(days=7)
+    end_search = now + timedelta(days=7)
+
+    for dag in dags:
+        if dag.dag_id in IGNORED_DAGS:
+            continue
+
+        task_count = get_dag_task_count(session, dagbag, dag)
+        schedule = get_schedule_info(dag)
+
+        dag_runs = session.query(DagRun).filter(
+            DagRun.dag_id == dag.dag_id,
+            date_col >= start_search,
+            date_col <= end_search
+        ).all()
+
+        run_history = {
+            getattr(run, date_attr).replace(tzinfo=None, microsecond=0).isoformat(): run.state
+            for run in dag_runs
+        }
+
+        recent_runs = session.query(DagRun).filter(
+            DagRun.dag_id == dag.dag_id
+        ).order_by(desc(date_col)).limit(15).all()
+
+        recent_success_runs = [
+            run for run in recent_runs if run.state == 'success' and run.end_date][:5]
+        avg_seconds = get_avg_execution_time(recent_success_runs)
+
+        bg_color = "#3788d8"
+
+        recent_execution_history = reversed(recent_runs[:5])
+        history_data = [
+            {"state": run.state, "date": getattr(
+                run, date_attr).strftime('%d/%m/%Y %H:%M')}
+            for run in recent_execution_history
+        ]
+
+        if schedule and isinstance(schedule, str) and croniter.is_valid(schedule):
+            try:
+                cron = croniter(schedule, start_search)
+                for _ in range(200):
+                    event_time = cron.get_next(datetime)
+                    if event_time > end_search:
+                        break
+
+                    current_iso_normalized = event_time.replace(
+                        tzinfo=None, microsecond=0).isoformat()
+                    status = run_history.get(current_iso_normalized, "no_run")
+                    border_color = get_border_color(status)
+
+                    events.append({
+                        "title": dag.dag_id,
+                        "start": event_time.isoformat(),
+                        "end": (event_time + timedelta(seconds=avg_seconds)).isoformat(),
+                        "backgroundColor": bg_color,
+                        "borderColor": border_color,
+                        "borderWidth": "3px",
+                        "extendedProps": {
+                            "status": status,
+                            "cron": schedule,
+                            "duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s",
+                            "dag_id": dag.dag_id,
+                            "task_count": int(task_count),
+                            "history": history_data
+                        }
+                    })
+            except Exception:
+                continue
+
+    # Renderiza o HTML passando o request (obrigatório no FastAPI) e as variáveis
+    return templates.TemplateResponse(
+        "calendar_v3.html",
+        {"request": request, "events": events}
+    )
