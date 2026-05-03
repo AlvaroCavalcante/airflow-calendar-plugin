@@ -27,5 +27,5 @@ class GlobalSchedulePlugin(AirflowPlugin):
             "name": "Calendar",
             "url_route": "airflow_calendar",
             "destination": "nav",
-            "href": "/calendar",
+            "href": "/calendar/",
         }]
