@@ -4,6 +4,7 @@ from croniter import croniter
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -17,13 +18,11 @@ from airflow.utils import timezone
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 IGNORED_DAGS = ["airflow_monitoring"]
 
-# Inicializa o app FastAPI
 app = FastAPI(title="Airflow Calendar")
-
-# Configura o motor de templates do Jinja2 para a pasta templates
 templates = Jinja2Templates(directory=os.path.join(CURRENT_DIR, 'templates'))
 
-# ===== Funções Auxiliares (Fora da classe agora) =====
+static_path = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 
 def _get_color_from_tag(tag_name):
