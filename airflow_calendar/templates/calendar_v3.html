@@ -39,11 +39,24 @@
             display: none !important;
         }
 
-        .modal-header { padding: 12px 16px 0; border: none; }
+        .modal-header { 
+            position: relative;
+            padding: 16px 16px 0 45px;
+            border: none; 
+        }
+
         .modal-body { padding: 0 16px 20px; }
         .info-label { color: #70757a; font-size: 0.75rem; text-transform: uppercase; margin-top: 12px; }
         .info-value { color: #3c4043; font-size: 0.95rem; font-weight: 400; }
-        .modal-header .close { margin-top: -5px; z-index: 10; }
+        .modal-header .close { 
+            position: absolute;
+            top: 18px;
+            left: 16px;
+            margin: 0; 
+            z-index: 10;
+            padding: 0;
+            outline: none;
+        }
         .modal-title {
             font-size: 1.2rem !important;
             font-weight: 600;
@@ -52,7 +65,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             display: block;
-            width: 90%;
+            width: 100%;
         }
 
         .fc-event {
