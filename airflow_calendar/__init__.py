@@ -28,6 +28,6 @@ class GlobalSchedulePlugin(AirflowPlugin):
             "url_route": "airflow_calendar",
             "destination": "nav",
             "href": "/calendar/",
-            "icon": "/calendar/static/calendar-days.svg",
-            "icon_dark_mode": "/calendar/static/calendar-days.svg",
+            "icon": "/calendar/static/calendar.svg",
+            "icon_dark_mode": "/calendar/static/calendar_dark.svg",
         }]
