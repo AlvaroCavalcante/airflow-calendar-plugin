@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="airflow_calendar", 
-    version="0.6.1",
+    version="0.7.0",
     description="A modern and intuitive calendar interface for visualizing your DAG schedules in Apache Airflow.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
