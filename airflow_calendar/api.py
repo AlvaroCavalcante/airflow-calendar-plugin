@@ -43,13 +43,12 @@ def get_border_color(status):
 
 
 def get_avg_execution_time(recent_success_runs):
-    avg_seconds = 300
     if recent_success_runs:
         durations = [(run.end_date - run.start_date).total_seconds()
                      for run in recent_success_runs if run.start_date]
         if durations:
-            avg_seconds = sum(durations) / len(durations)
-    return max(avg_seconds, 300)
+            return sum(durations) / len(durations)
+    return 300
 
 
 def get_schedule_info(dag):
@@ -163,8 +162,8 @@ def index(request: Request, session=None):
 
                         events.append({
                             "title": dag.dag_id,
-                            "start": event_time.isoformat(),
-                            "end": (event_time + timedelta(seconds=avg_seconds)).isoformat(),
+                            "start": event_time.isoformat() + 'Z',
+                            "end": (event_time + timedelta(seconds=avg_seconds)).isoformat() + 'Z',
                             "backgroundColor": bg_color,
                             "borderColor": border_color,
                             "borderWidth": "3px",
@@ -181,10 +180,18 @@ def index(request: Request, session=None):
                     continue
             else:
                 schedule_delta = _parse_timedelta_schedule(schedule)
-                if schedule_delta and recent_runs:
+                if schedule_delta:
                     try:
-                        base = getattr(recent_runs[0], date_attr)
-                        base = base.replace(tzinfo=None) if hasattr(base, 'replace') else base
+                        now_naive = datetime.utcnow()
+                        # Skip pre-created future runs (Airflow 3 schedules the next run
+                        # before it executes); anchor only to the last actual past run
+                        past_runs = [
+                            r for r in recent_runs
+                            if getattr(r, date_attr).replace(tzinfo=None) <= now_naive
+                        ]
+                        if not past_runs:
+                            continue
+                        base = getattr(past_runs[0], date_attr).replace(tzinfo=None)
                         # Walk back to the first occurrence at or after cron_start
                         t = base
                         while t >= cron_start:
@@ -197,8 +204,8 @@ def index(request: Request, session=None):
                             border_color = get_border_color(status)
                             events.append({
                                 "title": dag.dag_id,
-                                "start": t.isoformat(),
-                                "end": (t + timedelta(seconds=avg_seconds)).isoformat(),
+                                "start": t.isoformat() + 'Z',
+                                "end": (t + timedelta(seconds=avg_seconds)).isoformat() + 'Z',
                                 "backgroundColor": bg_color,
                                 "borderColor": border_color,
                                 "borderWidth": "3px",

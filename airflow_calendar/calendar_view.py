@@ -117,8 +117,8 @@ class CalendarView(BaseView):
 
                         events.append({
                             "title": dag.dag_id,
-                            "start": event_time.isoformat(),
-                            "end": (event_time + timedelta(seconds=avg_seconds)).isoformat(),
+                            "start": event_time.isoformat() + 'Z',
+                            "end": (event_time + timedelta(seconds=avg_seconds)).isoformat() + 'Z',
                             "backgroundColor": bg_color,
                             "borderColor": border_color,
                             "borderWidth": "3px",
@@ -135,8 +135,16 @@ class CalendarView(BaseView):
                     continue
             elif schedule_delta and recent_runs:
                 try:
-                    base = getattr(recent_runs[0], date_attr)
-                    base = base.replace(tzinfo=None) if hasattr(base, 'replace') else base
+                    now_naive = datetime.utcnow()
+                    # Skip pre-created future runs (Airflow 3 schedules the next run
+                    # before it executes); anchor only to the last actual past run
+                    past_runs = [
+                        r for r in recent_runs
+                        if getattr(r, date_attr).replace(tzinfo=None) <= now_naive
+                    ]
+                    if not past_runs:
+                        continue
+                    base = getattr(past_runs[0], date_attr).replace(tzinfo=None)
                     # Walk back to the first occurrence at or after cron_start
                     t = base
                     while t >= cron_start:
@@ -149,8 +157,8 @@ class CalendarView(BaseView):
                         border_color = self.get_border_color(status)
                         events.append({
                             "title": dag.dag_id,
-                            "start": t.isoformat(),
-                            "end": (t + timedelta(seconds=avg_seconds)).isoformat(),
+                            "start": t.isoformat() + 'Z',
+                            "end": (t + timedelta(seconds=avg_seconds)).isoformat() + 'Z',
                             "backgroundColor": bg_color,
                             "borderColor": border_color,
                             "borderWidth": "3px",
