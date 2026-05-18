@@ -70,10 +70,11 @@ If the "Calendar" option still doesn't show up in the menu:
 ## 🛠️ Roadmap
 This project is in its early stages. Upcoming features include:
 
-- [ ] **Airflow 3 Compatibility:** Support for the next generation of Airflow.
+- [x] **Airflow 3 Compatibility:** Support for the next generation of Airflow.
 - [ ] **Tag-Based Filtering:** Filter calendar events using your existing DAG tags.
 - [ ] **Dynamic Styling:** Background colors for events based on DAG tags.
 - [ ] **Search functionality:** Quickly find specific events within the calendar.
+- [ ] **Schedule tool:** Schedule or edit your DAGs directly through the calendar view.
 
 ---
 
