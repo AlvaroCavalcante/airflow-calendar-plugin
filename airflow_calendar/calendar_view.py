@@ -1,4 +1,5 @@
 import os
+import re
 import hashlib
 from croniter import croniter
 from datetime import datetime, timedelta
@@ -16,7 +17,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 IS_AIRFLOW_3 = airflow_version.startswith('3')
 IGNORED_DAGS = ["airflow_monitoring"]
-
+RUNS_COUNT = 10000
 
 class CalendarView(BaseView):
     default_view = "index"
@@ -49,6 +50,10 @@ class CalendarView(BaseView):
         now = timezone.utcnow()
         start_search = now - timedelta(days=7)
         end_search = now + timedelta(days=7)
+
+        # Use naive UTC for croniter to avoid local-time conversion in datetime.fromtimestamp()
+        cron_start = start_search.replace(tzinfo=None)
+        cron_end = end_search.replace(tzinfo=None)
 
         for dag in dags:
             if dag.dag_id in IGNORED_DAGS:
@@ -93,17 +98,18 @@ class CalendarView(BaseView):
                     "date": exec_date.strftime('%d/%m/%Y %H:%M')
                 })
 
+            schedule_delta = self._parse_timedelta_schedule(schedule)
+
             if schedule and isinstance(schedule, str) and croniter.is_valid(schedule):
                 try:
-                    cron = croniter(schedule, start_search)
+                    cron = croniter(schedule, cron_start)
 
-                    for _ in range(200):
+                    for _ in range(RUNS_COUNT):
                         event_time = cron.get_next(datetime)
-                        if event_time > end_search:
+                        if event_time > cron_end:
                             break
 
-                        current_iso_normalized = event_time.replace(
-                            tzinfo=None, microsecond=0).isoformat()
+                        current_iso_normalized = event_time.replace(microsecond=0).isoformat()
                         status = run_history.get(
                             current_iso_normalized, "no_run")
 
@@ -111,8 +117,8 @@ class CalendarView(BaseView):
 
                         events.append({
                             "title": dag.dag_id,
-                            "start": event_time.isoformat(),
-                            "end": (event_time + timedelta(seconds=avg_seconds)).isoformat(),
+                            "start": event_time.isoformat() + 'Z',
+                            "end": (event_time + timedelta(seconds=avg_seconds)).isoformat() + 'Z',
                             "backgroundColor": bg_color,
                             "borderColor": border_color,
                             "borderWidth": "3px",
@@ -125,6 +131,48 @@ class CalendarView(BaseView):
                                 "history": history_data
                             }
                         })
+                except Exception:
+                    continue
+            elif schedule_delta and recent_runs:
+                try:
+                    now_naive = datetime.utcnow()
+                    # Skip pre-created future runs (Airflow 3 schedules the next run
+                    # before it executes); anchor only to the last actual past run
+                    past_runs = [
+                        r for r in recent_runs
+                        if getattr(r, date_attr).replace(tzinfo=None) <= now_naive
+                    ]
+                    if not past_runs:
+                        continue
+                    base = getattr(past_runs[0], date_attr).replace(tzinfo=None)
+                    # Walk back to the first occurrence at or after cron_start
+                    t = base
+                    while t >= cron_start:
+                        t -= schedule_delta
+                    t += schedule_delta
+                    count = 0
+                    while t <= cron_end and count < RUNS_COUNT:
+                        current_iso_normalized = t.replace(microsecond=0).isoformat()
+                        status = run_history.get(current_iso_normalized, "no_run")
+                        border_color = self.get_border_color(status)
+                        events.append({
+                            "title": dag.dag_id,
+                            "start": t.isoformat() + 'Z',
+                            "end": (t + timedelta(seconds=avg_seconds)).isoformat() + 'Z',
+                            "backgroundColor": bg_color,
+                            "borderColor": border_color,
+                            "borderWidth": "3px",
+                            "extendedProps": {
+                                "status": status,
+                                "cron": str(schedule),
+                                "duration": f"{int(avg_seconds/60)}m {int(avg_seconds % 60)}s",
+                                "dag_id": dag.dag_id,
+                                "task_count": int(task_count),
+                                "history": history_data
+                            }
+                        })
+                        t += schedule_delta
+                        count += 1
                 except Exception:
                     continue
 
@@ -160,6 +208,27 @@ class CalendarView(BaseView):
         if schedule is None and hasattr(dag, 'schedule'):
             schedule = dag.schedule
         return schedule
+
+    def _parse_timedelta_schedule(self, schedule):
+        """Return a timedelta if schedule is a timedelta object or a timedelta string
+        like '1 day, 6:00:00' or '30:00:00'. Returns None otherwise."""
+        if isinstance(schedule, timedelta):
+            return schedule
+        if not isinstance(schedule, str):
+            return None
+        # Match 'X days, HH:MM:SS' or 'X day, HH:MM:SS'
+        m = re.match(r'^(\d+)\s+days?,\s*(\d+):(\d+):(\d+)$', schedule.strip())
+        if m:
+            days, h, mn, s = int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))
+            return timedelta(days=days, hours=h, minutes=mn, seconds=s)
+        # Match 'HH:MM:SS' (no days part)
+        m = re.match(r'^(\d+):(\d+):(\d+)$', schedule.strip())
+        if m:
+            h, mn, s = int(m.group(1)), int(m.group(2)), int(m.group(3))
+            td = timedelta(hours=h, minutes=mn, seconds=s)
+            if td.total_seconds() > 0:
+                return td
+        return None
 
     def get_dag_task_count(self, session, dagbag, dag):
         ser_dag = SerializedDagModel.get(dag.dag_id, session=session)
