@@ -132,6 +132,8 @@
         opacity: 0.4;
     }
 
+    <link rel="stylesheet" href="{{ static_base }}/calendar_colors.css">
+
 </style>
 
 	<div id='calendar-container'>
@@ -164,6 +166,8 @@
                 </div>
           </div>
 
+          {% include '_color_picker.html' %}
+
           <hr>
             <button id="modalDagLink" class="btn btn-primary btn-block">
               Open DAG <i class="fa fa-external-link" style="margin-left: 8px;"></i>
@@ -185,8 +189,10 @@
 	</div>
 
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+  <script src="{{ static_base }}/calendar_colors.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      var colorPicker;
       var calendarEl = document.getElementById('calendar');
       var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
@@ -321,12 +327,15 @@
             finalY = viewHeight - actualHeight - buffer;
           }
 
+          colorPicker.openForDag(dagId);
+
           modalDialog.style.left = finalX + "px";
           modalDialog.style.top = finalY + "px";
           $('#eventModal').modal('show');
         }
       });
       calendar.render();
+      colorPicker = AirflowCalendarColors.init(calendar, '{{ colors_api_base }}');
     });
   </script>
 {% endblock %}

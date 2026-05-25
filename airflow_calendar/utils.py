@@ -9,9 +9,10 @@ from airflow.models import DagRun
 from airflow.models.serialized_dag import SerializedDagModel
 from airflow.utils import timezone
 
+from airflow_calendar.dag_colors import get_dag_color, load_dag_colors
+
 IGNORED_DAGS = ["airflow_monitoring"]
 RUNS_COUNT = 5000
-DEFAULT_BG_COLOR = "#3788d8"
 
 
 def parse_timedelta_schedule(schedule):
@@ -195,6 +196,7 @@ def build_calendar_events(session, dags, dagbag, date_col, date_attr):
 
     cron_start = start_search.replace(tzinfo=None)
     cron_end = end_search.replace(tzinfo=None)
+    dag_colors = load_dag_colors()
 
     for dag in dags:
         if dag.dag_id in IGNORED_DAGS:
@@ -224,12 +226,13 @@ def build_calendar_events(session, dags, dagbag, date_col, date_attr):
         ][:5]
         avg_seconds = get_avg_execution_time(recent_success_runs)
         history_data = _build_history_data(recent_runs, date_attr)
+        bg_color = get_dag_color(dag.dag_id, dag_colors)
 
         if schedule and isinstance(schedule, str) and croniter.is_valid(schedule):
             try:
                 _add_cron_events(
                     events, dag, schedule, cron_start, cron_end,
-                    run_history, avg_seconds, DEFAULT_BG_COLOR,
+                    run_history, avg_seconds, bg_color,
                     task_count, history_data,
                 )
             except Exception:
@@ -241,7 +244,7 @@ def build_calendar_events(session, dags, dagbag, date_col, date_attr):
                     _add_timedelta_events(
                         events, dag, schedule, schedule_delta, recent_runs,
                         date_attr, cron_start, cron_end, run_history,
-                        avg_seconds, DEFAULT_BG_COLOR, task_count, history_data,
+                        avg_seconds, bg_color, task_count, history_data,
                     )
                 except Exception:
                     continue
