@@ -48,6 +48,8 @@ class CalendarView(BaseView):
             saved = save_dag_color(dag_id, color)
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
+        except Exception as exc:
+            return jsonify({"error": "Could not save DAG color"}), 500
         return jsonify({"dag_id": dag_id, "color": saved})
 
     @expose("/")
