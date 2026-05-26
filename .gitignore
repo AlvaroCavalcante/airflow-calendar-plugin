@@ -108,6 +108,9 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# User-specific DAG colors (persisted at runtime)
+airflow_calendar/data/dag_colors.json
+
 # Environments
 .env
 .venv

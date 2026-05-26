@@ -190,6 +190,7 @@
             opacity: 0.4;
         }
     </style>
+    <link rel="stylesheet" href="{{ static_base }}/calendar_colors.css">
 </head>
 <body>
 
@@ -217,6 +218,7 @@
                     <div class="info-value">
                         <div id="modalHistory" class="history-container"></div>
                     </div>
+                    {% include '_color_picker.html' %}
                     <hr>
                     <button id="modalDagLink" class="btn btn-primary btn-block">
                         Open DAG <i class="fa fa-external-link-alt" style="margin-left: 8px;"></i>
@@ -227,7 +229,7 @@
     </div>
 
     <div class="calendar-plugin-footer">
-        <span>v0.7.0</span>
+        <span>v0.8.0</span>
         <span class="separator">•</span>
         <a id="github-link" href="https://github.com/AlvaroCavalcante/airflow-calendar-plugin" target="_blank" rel="noopener noreferrer" title="See on GitHub">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -240,6 +242,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <script src="{{ static_base }}/calendar_colors.js"></script>
 
     <script>
         function syncAirflowTheme() {
@@ -283,6 +286,7 @@
                 console.log(error)
             }
 
+            var colorPicker;
             var calendarEl = document.getElementById('calendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
@@ -409,12 +413,15 @@
                         finalY = viewHeight - actualHeight - buffer;
                     }
 
+                    colorPicker.openForDag(dagId, info.event.backgroundColor);
+
                     modalDialog.style.left = finalX + "px";
                     modalDialog.style.top = finalY + "px";
                     $('#eventModal').modal('show');
                 }
             });
             calendar.render();
+            colorPicker = AirflowCalendarColors.init(calendar, '{{ colors_api_base }}');
         });
     </script>
 </body>
