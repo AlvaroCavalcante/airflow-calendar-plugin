@@ -19,6 +19,9 @@ COLOR_PALETTE = (
 
 _HEX_COLOR_RE = re.compile(r'^#[0-9A-Fa-f]{6}$')
 
+# Cached after first use: 'variable' or 'file'
+_storage_backend = None
+
 
 def _sanitize_colors(data):
     if not isinstance(data, dict):
@@ -33,7 +36,6 @@ def _sanitize_colors(data):
 
 
 def _colors_file_path():
-    """Writable path (package install dir is often read-only on Composer/PyPI)."""
     env_path = os.environ.get('AIRFLOW_CALENDAR_COLORS_FILE')
     if env_path:
         return env_path
@@ -42,6 +44,38 @@ def _colors_file_path():
         return os.path.join(
             airflow_home, 'data', 'airflow_calendar', 'dag_colors.json')
     return os.path.join(CURRENT_DIR, 'data', 'dag_colors.json')
+
+
+def _file_is_writable():
+    colors_file = _colors_file_path()
+    directory = os.path.dirname(colors_file)
+    try:
+        os.makedirs(directory, exist_ok=True)
+        with open(colors_file, 'a', encoding='utf-8'):
+            pass
+        return True
+    except OSError:
+        return False
+
+
+def _resolve_storage_backend():
+    """Pick one backend: file when writable locally, else Airflow Variable."""
+    global _storage_backend
+    if _storage_backend is not None:
+        return _storage_backend
+
+    forced = os.environ.get('AIRFLOW_CALENDAR_STORAGE', '').lower()
+    if forced == 'file':
+        _storage_backend = 'file'
+    elif forced == 'variable':
+        _storage_backend = 'variable'
+    elif _file_is_writable():
+        _storage_backend = 'file'
+    else:
+        _storage_backend = 'variable'
+
+    log.debug('DAG colors storage backend: %s', _storage_backend)
+    return _storage_backend
 
 
 def _load_colors_from_file():
@@ -64,19 +98,16 @@ def _save_colors_to_file(colors):
 
 
 def _load_colors_from_variable():
-    try:
-        from airflow.models import Variable
-    except ImportError:
-        return None
+    from airflow.models import Variable
 
     try:
         raw = Variable.get(VARIABLE_KEY, default_var=None)
     except Exception as exc:
         log.warning('Could not read DAG colors variable: %s', exc)
-        return None
+        return {}
 
     if raw is None:
-        return None
+        return {}
 
     if isinstance(raw, dict):
         return _sanitize_colors(raw)
@@ -96,12 +127,38 @@ def _save_colors_to_variable(colors):
     Variable.set(VARIABLE_KEY, colors, serialize_json=True)
 
 
+def _load_from_backend(backend):
+    if backend == 'file':
+        return _load_colors_from_file()
+    return _load_colors_from_variable()
+
+
+def _save_to_backend(backend, colors):
+    if backend == 'file':
+        _save_colors_to_file(colors)
+    else:
+        _save_colors_to_variable(colors)
+
+
 def load_dag_colors():
-    file_colors = _load_colors_from_file()
-    variable_colors = _load_colors_from_variable()
-    if variable_colors is None:
-        return file_colors
-    return {**file_colors, **variable_colors}
+    backend = _resolve_storage_backend()
+    colors = _load_from_backend(backend)
+
+    # One-time merge if the inactive backend still has data (e.g. after migration).
+    other = 'variable' if backend == 'file' else 'file'
+    legacy = _load_from_backend(other)
+    if legacy:
+        merged = {**legacy, **colors}
+        if merged != colors:
+            try:
+                _save_to_backend(backend, merged)
+                colors = merged
+            except Exception as exc:
+                log.warning(
+                    'Could not migrate DAG colors to %s: %s', backend, exc)
+                colors = merged
+
+    return colors
 
 
 def save_dag_color(dag_id, color):
@@ -113,32 +170,19 @@ def save_dag_color(dag_id, color):
     if not _HEX_COLOR_RE.match(color) or color not in COLOR_PALETTE:
         raise ValueError('Invalid color')
 
-    colors = load_dag_colors()
+    backend = _resolve_storage_backend()
+    colors = _load_from_backend(backend)
     colors[dag_id] = color
 
-    saved = False
-    last_error = None
-
     try:
-        _save_colors_to_variable(colors)
-        saved = True
+        _save_to_backend(backend, colors)
     except Exception as exc:
-        last_error = exc
-        log.warning('Could not save DAG colors to Airflow Variable: %s', exc)
-
-    try:
-        _save_colors_to_file(colors)
-        saved = True
-    except OSError as exc:
-        last_error = exc
-        log.warning('Could not save DAG colors file: %s', exc)
-
-    if not saved:
+        log.warning('Could not save DAG colors via %s: %s', backend, exc)
         raise ValueError(
             'Could not persist DAG colors. On Cloud Composer, ensure the '
             'webserver can write Airflow Variables or set '
             'AIRFLOW_CALENDAR_COLORS_FILE to a writable path.'
-        ) from last_error
+        ) from exc
 
     return color
 

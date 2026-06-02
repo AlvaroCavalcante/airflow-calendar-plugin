@@ -61,6 +61,7 @@
         const pickerEl = document.getElementById('dagColorPicker');
         let dagColors = {};
         let activeDagId = null;
+        let pendingSave = null;
 
         fetch(apiBase)
             .then(function (response) {
@@ -76,11 +77,12 @@
                 console.warn('Could not load DAG colors:', error);
             });
 
-        function persistColor(dagId, color) {
+        function persistColor(dagId, color, signal) {
             return fetch(apiBase + '/' + encodeURIComponent(dagId), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ color: color }),
+                signal: signal,
             }).then(function (response) {
                 if (!response.ok) {
                     throw new Error('Failed to save color');
@@ -93,14 +95,38 @@
             if (!activeDagId || !pickerEl) {
                 return;
             }
-            persistColor(activeDagId, color)
-                .then(function () {
-                    dagColors[activeDagId] = color;
-                    applyColorToDag(calendar, activeDagId, color);
-                    renderPicker(pickerEl, color, selectColor);
-                })
+
+            const dagId = activeDagId;
+            const previousColor = resolveDagColor(dagColors[dagId], null);
+
+            if (color === previousColor) {
+                return;
+            }
+
+            // Optimistic update: UI changes immediately, persistence runs in background.
+            dagColors[dagId] = color;
+            renderPicker(pickerEl, color, selectColor);
+            applyColorToDag(calendar, dagId, color);
+
+            if (pendingSave) {
+                pendingSave.abort();
+            }
+            pendingSave = new AbortController();
+
+            persistColor(dagId, color, pendingSave.signal)
                 .catch(function (error) {
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
                     console.warn('Could not save DAG color:', error);
+                    dagColors[dagId] = previousColor;
+                    if (activeDagId === dagId) {
+                        renderPicker(pickerEl, previousColor, selectColor);
+                    }
+                    applyColorToDag(calendar, dagId, previousColor);
+                })
+                .finally(function () {
+                    pendingSave = null;
                 });
         }
 
