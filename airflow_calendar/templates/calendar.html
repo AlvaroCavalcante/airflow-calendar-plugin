@@ -1,6 +1,7 @@
 {% extends "airflow/main.html" %}
 {% block content %}
   <link rel="stylesheet" href="{{ static_base }}/calendar_colors.css">
+  <link rel="stylesheet" href="{{ static_base }}/calendar_modal.css">
   <style>
     .fc-v-event { min-height: 25px !important; }
     .fc-event-title { font-weight: bold; font-size: 0.85em; }
@@ -177,7 +178,7 @@
   </div>
 
 	<div class="calendar-plugin-footer">
-		<span>v0.8.1</span>
+		<span>v0.8.2</span>
 		<span class="separator">•</span>
 		<a id="github-link" href="https://github.com/AlvaroCavalcante/airflow-calendar-plugin" target="_blank" rel="noopener noreferrer" title="See on GitHub">
 			<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -189,8 +190,10 @@
 
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
   <script src="{{ static_base }}/calendar_colors.js"></script>
+  <script src="{{ static_base }}/calendar_modal.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      AirflowCalendarModal.init();
       var colorPicker;
       var calendarEl = document.getElementById('calendar');
       var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -294,43 +297,8 @@
 
           const modalDialog = document.querySelector('#eventModal .modal-dialog');
 
-          modalDialog.style.visibility = 'hidden';
-          modalDialog.style.display = 'block';
-          const actualHeight = modalDialog.offsetHeight;
-          modalDialog.style.display = ''; 
-          modalDialog.style.visibility = '';
-
-          let x = info.jsEvent.clientX;
-          let y = info.jsEvent.clientY;
-
-          const modalWidth = 320;
-          const viewWidth = window.innerWidth;
-          const viewHeight = window.innerHeight;
-          const buffer = 15;
-
-          let finalX = x + 10;
-          if (finalX + modalWidth > viewWidth - buffer) {
-              finalX = x - modalWidth - 10;
-          }
-
-          let finalY = y + 10;
-          if (finalY + actualHeight > viewHeight - buffer) {
-            finalY = y - actualHeight - 10;
-          }
-
-          if (finalY < buffer) {
-            finalY = buffer;
-          }
-
-          if (finalY + actualHeight > viewHeight - buffer) {
-            finalY = viewHeight - actualHeight - buffer;
-          }
-
           colorPicker.openForDag(dagId, info.event.backgroundColor);
-
-          modalDialog.style.left = finalX + "px";
-          modalDialog.style.top = finalY + "px";
-          $('#eventModal').modal('show');
+          AirflowCalendarModal.show(modalDialog, info.jsEvent.clientX, info.jsEvent.clientY);
         }
       });
       calendar.render();

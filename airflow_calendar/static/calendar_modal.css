@@ -1,0 +1,14 @@
+html {
+    scrollbar-gutter: stable;
+}
+
+#eventModal.modal-measuring {
+    display: block !important;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+#eventModal.modal-measuring .modal-dialog {
+    position: fixed;
+    margin: 0;
+}
