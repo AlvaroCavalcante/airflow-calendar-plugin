@@ -11,6 +11,7 @@ from airflow.models.dagbag import DagBag
 from airflow.utils.session import create_session
 
 from airflow_calendar.dag_colors import load_dag_colors, save_dag_color
+from airflow_calendar.static_assets import load_modal_styles
 from airflow_calendar.utils import build_calendar_events
 
 
@@ -63,6 +64,8 @@ def index(request: Request, session=None):
                 "events": events,
                 "colors_api_base": "/calendar/api/colors",
                 "static_base": "/calendar/static",
+                "modal_styles": load_modal_styles(),
+                "assets_version": "0.9.0",
             })
             return HTMLResponse(content=html_content)
         except Exception as e:

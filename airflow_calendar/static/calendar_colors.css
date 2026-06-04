@@ -1,41 +1,173 @@
-.dag-color-picker {
-    display: grid;
-    grid-template-columns: repeat(6, 28px);
-    gap: 8px;
-    margin-top: 6px;
-}
-
-.dag-color-swatch {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    padding: 0;
+#eventModal .dag-color-row {
     position: relative;
+    z-index: 2;
 }
 
-.dag-color-swatch:hover {
-    transform: scale(1.08);
+#eventModal .dag-color-dropdown {
+    position: relative;
+    flex: 1;
+    min-width: 0;
 }
 
-.dag-color-swatch.selected::after {
-    content: '✓';
-    position: absolute;
-    inset: 0;
+#eventModal .dag-color-trigger {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
-    text-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+    gap: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #3c4043;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.dag-color-swatch.selected {
-    border-color: #3c4043;
+#eventModal .dag-color-trigger:hover {
+    border-color: #bdc1c6;
 }
 
-body.dark-mode .dag-color-swatch.selected {
+#eventModal .dag-color-trigger[aria-expanded="true"] {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
+
+#eventModal .dag-color-preview {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#eventModal .dag-color-trigger-text {
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#eventModal .dag-color-chevron {
+    font-size: 0.625rem;
+    color: #80868b;
+    flex-shrink: 0;
+}
+
+#eventModal .dag-color-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: auto;
+    width: 268px;
+    max-width: calc(100vw - 32px);
+    z-index: 20;
+    background: #fff;
+    border: 1px solid #e8eaed;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    padding: 8px;
+    display: none;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    box-sizing: border-box;
+}
+
+#eventModal .dag-color-menu.is-open {
+    display: grid;
+}
+
+#eventModal .dag-color-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 2px;
+    min-width: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+#eventModal .dag-color-option:hover {
+    background: #f1f3f4;
+}
+
+#eventModal .dag-color-option.selected {
+    background: #e8f0fe;
+}
+
+#eventModal .dag-color-option-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+}
+
+#eventModal .dag-color-option.selected .dag-color-option-swatch {
+    border-color: #202124;
+    box-shadow: inset 0 0 0 1px #fff;
+}
+
+#eventModal .dag-color-option-name {
+    font-size: 0.5625rem;
+    font-weight: 500;
+    color: #5f6368;
+    line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+html[data-theme="dark"] #eventModal .dag-color-trigger,
+html[data-color-mode="dark"] #eventModal .dag-color-trigger,
+body.dark-mode #eventModal .dag-color-trigger {
+    background: #1a202c;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] #eventModal .dag-color-trigger[aria-expanded="true"],
+html[data-color-mode="dark"] #eventModal .dag-color-trigger[aria-expanded="true"],
+body.dark-mode #eventModal .dag-color-trigger[aria-expanded="true"] {
+    border-color: #63b3ed;
+    box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.2);
+}
+
+html[data-theme="dark"] #eventModal .dag-color-menu,
+html[data-color-mode="dark"] #eventModal .dag-color-menu,
+body.dark-mode #eventModal .dag-color-menu {
+    background: #2d3748;
+    border-color: #4a5568;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] #eventModal .dag-color-option:hover,
+html[data-color-mode="dark"] #eventModal .dag-color-option:hover,
+body.dark-mode #eventModal .dag-color-option:hover {
+    background: #4a5568;
+}
+
+html[data-theme="dark"] #eventModal .dag-color-option.selected,
+html[data-color-mode="dark"] #eventModal .dag-color-option.selected,
+body.dark-mode #eventModal .dag-color-option.selected {
+    background: #2c5282;
+}
+
+html[data-theme="dark"] #eventModal .dag-color-option-name,
+html[data-color-mode="dark"] #eventModal .dag-color-option-name,
+body.dark-mode #eventModal .dag-color-option-name {
+    color: #a0aec0;
+}
+
+html[data-theme="dark"] #eventModal .dag-color-option.selected .dag-color-option-swatch,
+html[data-color-mode="dark"] #eventModal .dag-color-option.selected .dag-color-option-swatch,
+body.dark-mode #eventModal .dag-color-option.selected .dag-color-option-swatch {
     border-color: #f7fafc;
 }

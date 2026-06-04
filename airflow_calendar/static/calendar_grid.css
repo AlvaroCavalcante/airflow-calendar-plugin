@@ -1,0 +1,44 @@
+/* ── Current time indicator ── */
+.fc {
+    --fc-now-indicator-color: #ea4335;
+}
+
+.fc .fc-timegrid-now-indicator-line {
+    border-top-width: 3px !important;
+    opacity: 1 !important;
+    pointer-events: none;
+}
+
+.fc .fc-timegrid-now-indicator-arrow {
+    border-width: 7px 0 7px 8px !important;
+    border-top-color: transparent !important;
+    border-bottom-color: transparent !important;
+    border-left-color: #ea4335 !important;
+    border-right-color: transparent !important;
+    margin-top: -7px;
+    opacity: 1 !important;
+    pointer-events: none;
+}
+
+.fc .fc-timegrid-now-indicator-container {
+    pointer-events: none;
+}
+
+/* ── Today column highlight (shared default + AF3 dark via body.dark-mode) ── */
+.fc .fc-day-today {
+    background-color: rgba(255, 193, 7, 0.14) !important;
+}
+
+.fc .fc-day-today .fc-timegrid-col-frame,
+.fc .fc-day-today .fc-daygrid-day-frame {
+    background-color: rgba(255, 193, 7, 0.14) !important;
+}
+
+body.dark-mode .fc .fc-day-today {
+    background-color: rgba(255, 193, 7, 0.10) !important;
+}
+
+body.dark-mode .fc .fc-day-today .fc-timegrid-col-frame,
+body.dark-mode .fc .fc-day-today .fc-daygrid-day-frame {
+    background-color: rgba(255, 193, 7, 0.10) !important;
+}

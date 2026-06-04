@@ -1,0 +1,283 @@
+html {
+    scrollbar-gutter: stable;
+}
+
+.modal-backdrop.show {
+    opacity: 0 !important;
+}
+
+#eventModal.modal-measuring {
+    display: block !important;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+#eventModal.modal-measuring .modal-dialog {
+    position: fixed;
+    margin: 0;
+}
+
+#eventModal.show {
+    display: block;
+}
+
+/* ── Modal shell ── */
+#eventModal.modal.fade .modal-dialog {
+    position: fixed !important;
+    margin: 0 !important;
+    width: 300px;
+    max-width: 300px;
+    z-index: 9999;
+    transition: none;
+    transform: none !important;
+}
+
+#eventModal .modal-content.dag-modal-content {
+    border-radius: 12px;
+    border: 1px solid #e8eaed;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: visible;
+    background-color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#eventModal .dag-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px 8px;
+    border: none;
+}
+
+#eventModal .dag-modal-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0 4px 0 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #202124;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#eventModal .dag-modal-close {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0 0 0 8px;
+    border: none;
+    background: transparent;
+    font-size: 1.35rem;
+    line-height: 1;
+    opacity: 0.45;
+    cursor: pointer;
+    color: inherit;
+    font-weight: 400;
+}
+
+#eventModal .dag-modal-close:hover {
+    opacity: 0.85;
+}
+
+#eventModal .dag-modal-body {
+    padding: 0 16px 16px;
+}
+
+#eventModal .dag-modal-execution {
+    margin: 0 0 12px;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: #5f6368;
+    line-height: 1.4;
+}
+
+#eventModal .dag-modal-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+#eventModal .dag-modal-stat {
+    background: #f1f3f4;
+    border: 1px solid #e0e3e7;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+#eventModal .dag-modal-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #80868b;
+    margin-bottom: 2px;
+}
+
+#eventModal .dag-modal-value {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #202124;
+    line-height: 1.3;
+}
+
+#eventModal .dag-modal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#eventModal .dag-modal-row .dag-modal-label {
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+#eventModal .dag-modal-cron {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #1a73e8;
+    background: #e8f0fe;
+    border-radius: 4px;
+    padding: 2px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+#eventModal .dag-history-row {
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+#eventModal .history-container {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+#eventModal .history-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+#eventModal .dot-success { background-color: #28a745; }
+#eventModal .dot-failed { background-color: #dc3545; }
+#eventModal .dot-running { background-color: #017cee; }
+#eventModal .dot-queued { background-color: #808080; }
+#eventModal .dot-other { background-color: #bebebe; }
+
+#eventModal .dag-modal-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 4px;
+    padding: 9px 16px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #fff;
+    background: #1a73e8;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+#eventModal .dag-modal-action-btn:hover {
+    background: #1765cc;
+}
+
+#eventModal .dag-modal-action-icon {
+    font-size: 0.75rem;
+}
+
+#eventModal .dag-modal-empty {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #9aa0a6;
+}
+
+/* ── Dark theme (AF3 body.dark-mode + AF2 html attribute) ── */
+html[data-theme="dark"] #eventModal .modal-content.dag-modal-content,
+html[data-color-mode="dark"] #eventModal .modal-content.dag-modal-content,
+body.dark-mode #eventModal .modal-content.dag-modal-content {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-title,
+html[data-theme="dark"] #eventModal .dag-modal-value,
+html[data-color-mode="dark"] #eventModal .dag-modal-title,
+html[data-color-mode="dark"] #eventModal .dag-modal-value,
+body.dark-mode #eventModal .dag-modal-title,
+body.dark-mode #eventModal .dag-modal-value {
+    color: #f7fafc;
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-execution,
+html[data-color-mode="dark"] #eventModal .dag-modal-execution,
+body.dark-mode #eventModal .dag-modal-execution {
+    color: #a0aec0;
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-label,
+html[data-color-mode="dark"] #eventModal .dag-modal-label,
+body.dark-mode #eventModal .dag-modal-label {
+    color: #a0aec0;
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-stat,
+html[data-color-mode="dark"] #eventModal .dag-modal-stat,
+body.dark-mode #eventModal .dag-modal-stat {
+    background: #526173 !important;
+    border: 1px solid #9ca3af !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-cron,
+html[data-color-mode="dark"] #eventModal .dag-modal-cron,
+body.dark-mode #eventModal .dag-modal-cron {
+    color: #90cdf4;
+    background: #2c5282;
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-close,
+html[data-color-mode="dark"] #eventModal .dag-modal-close,
+body.dark-mode #eventModal .dag-modal-close {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-empty,
+html[data-color-mode="dark"] #eventModal .dag-modal-empty,
+body.dark-mode #eventModal .dag-modal-empty {
+    color: #718096;
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-action-btn,
+html[data-color-mode="dark"] #eventModal .dag-modal-action-btn,
+body.dark-mode #eventModal .dag-modal-action-btn {
+    background: #3182ce;
+}
+
+html[data-theme="dark"] #eventModal .dag-modal-action-btn:hover,
+html[data-color-mode="dark"] #eventModal .dag-modal-action-btn:hover,
+body.dark-mode #eventModal .dag-modal-action-btn:hover {
+    background: #2b6cb0;
+}

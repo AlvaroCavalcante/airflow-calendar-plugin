@@ -1,0 +1,40 @@
+<div class="modal fade" id="eventModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content dag-modal-content">
+      <div class="dag-modal-header">
+        <h3 class="dag-modal-title" id="modalDagId">DAG ID</h3>
+        <button type="button" class="dag-modal-close" data-dismiss="modal" aria-label="Close">&times;</button>
+      </div>
+      <div class="dag-modal-body">
+        <p class="dag-modal-execution" id="modalTime">---</p>
+
+        <div class="dag-modal-stats">
+          <div class="dag-modal-stat">
+            <span class="dag-modal-label">Tasks</span>
+            <span class="dag-modal-value" id="modalTaskCount">---</span>
+          </div>
+          <div class="dag-modal-stat">
+            <span class="dag-modal-label">Duration</span>
+            <span class="dag-modal-value" id="modalDuration">---</span>
+          </div>
+        </div>
+
+        <div class="dag-modal-row">
+          <span class="dag-modal-label">Schedule</span>
+          <code class="dag-modal-cron" id="modalCron">---</code>
+        </div>
+
+        <div class="dag-modal-row dag-history-row">
+          <span class="dag-modal-label">Recent runs</span>
+          <div id="modalHistory" class="history-container"></div>
+        </div>
+
+        {% include '_color_picker.html' %}
+
+        <button type="button" id="modalDagLink" class="dag-modal-action-btn">
+          Open DAG <i class="fa fa-external-link-alt dag-modal-action-icon"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

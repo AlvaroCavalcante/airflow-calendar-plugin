@@ -9,6 +9,7 @@ from airflow.models.dagbag import DagBag
 from airflow.utils.session import provide_session
 
 from airflow_calendar.dag_colors import load_dag_colors, save_dag_color
+from airflow_calendar.static_assets import load_modal_styles
 from airflow_calendar.utils import build_calendar_events
 
 
@@ -72,4 +73,6 @@ class CalendarView(BaseView):
             events=events,
             colors_api_base="/airflow_calendar/api/colors",
             static_base="/airflow_calendar/static",
+            modal_styles=load_modal_styles(),
+            assets_version="0.9.0",
         )
