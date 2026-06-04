@@ -5,6 +5,8 @@
 [![Downloads](https://img.shields.io/pypi/dm/airflow-calendar.svg)](https://pypi.org/project/airflow-calendar/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/airflow-calendar)
 [![Airflow](https://img.shields.io/badge/Airflow-2.x-red.svg)](https://airflow.apache.org/)
+[![Airflow](https://img.shields.io/badge/Airflow-3.x-green.svg)](https://airflow.apache.org/)
+
 
 A modern and intuitive calendar interface for visualizing your DAG schedules in Apache Airflow. Transform complex cron expressions into a clear and searchable time grid inspired by the Google Calendar experience.
 
@@ -30,6 +32,7 @@ You can check more details about the project in the [Medium article](https://med
 * **Smart Info-Popup**: Instant access to critical DAG run details upon clicking an event.
     * Displays **Execution Time**, **Cron Expression**, **Estimated Duration**, and **Stats History (Last 5 runs)**.
 * **Color-Coded Status**: Immediate visual identification of success, failure, or "no-run" states through dynamic colors.
+* **Personalized background colors**: Choose the background colors of your events, making it easier to identify your DAGs.
 * **Native Deep Linking**: Directly jump to the native Airflow Grid View for any specific DAG with a single click.
 
 ---
@@ -71,10 +74,8 @@ If the "Calendar" option still doesn't show up in the menu:
 This project is in its early stages. Upcoming features include:
 
 - [x] **Airflow 3 Compatibility:** Support for the next generation of Airflow.
-- [ ] **Tag-Based Filtering:** Filter calendar events using your existing DAG tags.
-- [ ] **Dynamic Styling:** Background colors for events based on DAG tags.
+- [x] **Dynamic Styling:** Background colors for events based on DAG tags.
 - [ ] **Search functionality:** Quickly find specific events within the calendar.
-- [ ] **Schedule tool:** Schedule or edit your DAGs directly through the calendar view.
 
 ---
 
