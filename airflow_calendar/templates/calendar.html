@@ -122,6 +122,7 @@
   <script src='{{ static_base }}/full_calendar.js?v={{ assets_version }}'></script>
   <script src="{{ static_base }}/calendar_colors.js?v={{ assets_version }}"></script>
   <script src="{{ static_base }}/calendar_modal.js?v={{ assets_version }}"></script>
+  <script src="{{ static_base }}/calendar_timezone.js?v={{ assets_version }}"></script>
   <script>
     function syncAf2ModalTheme() {
       var html = document.documentElement;
@@ -153,8 +154,17 @@
       var calendarEl = document.getElementById('calendar');
       var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
+        timeZone: AirflowCalendarTimezone.initial(),
+        customButtons: {
+          timezone: {
+            text: AirflowCalendarTimezone.buttonLabel(),
+            click: function () {
+              AirflowCalendarTimezone.toggleMenu();
+            }
+          }
+        },
         headerToolbar: {
-          left: 'prev,next today',
+          left: 'prev,next today timezone',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
@@ -194,7 +204,7 @@
 
         eventClick: function(info) {
           const props = info.event.extendedProps;
-          const eventTime = info.event.start.toLocaleString();
+          const eventTime = AirflowCalendarTimezone.formatDate(info.event.start);
           const dagId = props.dag_id;
 
           document.getElementById('modalDagId').innerText = dagId;
@@ -219,7 +229,7 @@
                 else if (run.state === 'queued') dot.classList.add('dot-queued');
                 else dot.classList.add('dot-other');
 
-                dot.title = `Status: ${run.state.toUpperCase()}\nData: ${run.date}`;
+                dot.title = `Status: ${run.state.toUpperCase()}\nData: ${AirflowCalendarTimezone.formatDate(run.date)}`;
                 dot.style.cursor = 'help';
 
                 historyContainer.appendChild(dot);
@@ -256,6 +266,7 @@
         }
       });
       calendar.render();
+      AirflowCalendarTimezone.init(calendar);
       colorPicker = AirflowCalendarColors.init(calendar, '{{ colors_api_base }}');
     });
   </script>
