@@ -34,6 +34,10 @@
     }
 
     function applyColorToDag(calendar, dagId, color) {
+        if (global.AirflowCalendarFilter &&
+                typeof global.AirflowCalendarFilter.patchDagColor === 'function') {
+            global.AirflowCalendarFilter.patchDagColor(dagId, color);
+        }
         const apply = function () {
             calendar.getEvents().forEach(function (event) {
                 if (event.extendedProps.dag_id !== dagId) {

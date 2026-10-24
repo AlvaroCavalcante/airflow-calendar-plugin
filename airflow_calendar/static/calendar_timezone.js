@@ -10,6 +10,7 @@
     var boundCalendar = null;
     var menuEl = null;
     var menuOpen = false;
+    var toggleLocked = false;
 
     function readStorage(storage, key) {
         try {
@@ -204,14 +205,38 @@
         }
     }
 
-    function updateToolbar() {
-        var btn = timezoneButton();
-        if (btn) {
-            btn.textContent = buttonLabel();
-            btn.setAttribute('aria-expanded', menuOpen ? 'true' : 'false');
-            btn.classList.toggle('fc-button-active', menuOpen);
+    function hitNode(node, event) {
+        var target = event && event.target;
+        if (!node || !target) {
+            return false;
         }
+        if (target === node || (typeof node.contains === 'function' && node.contains(target))) {
+            return true;
+        }
+        if (typeof event.composedPath !== 'function') {
+            return false;
+        }
+        var path = event.composedPath();
+        for (var i = 0; i < path.length; i++) {
+            if (path[i] === node) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function updateToolbar() {
         syncMenuState();
+        var btn = timezoneButton();
+        if (!btn) {
+            return;
+        }
+        var label = buttonLabel();
+        if (btn.textContent !== label) {
+            btn.textContent = label;
+        }
+        btn.setAttribute('aria-expanded', menuOpen ? 'true' : 'false');
+        btn.classList.toggle('fc-button-active', menuOpen);
     }
 
     function positionMenu() {
@@ -242,11 +267,27 @@
     }
 
     function toggleMenu() {
+        if (toggleLocked) {
+            return;
+        }
+        toggleLocked = true;
+        setTimeout(function () {
+            toggleLocked = false;
+        }, 0);
         if (menuOpen) {
             closeMenu();
         } else {
             openMenu();
         }
+    }
+
+    function onToolbarClick(event) {
+        if (!hitNode(timezoneButton(), event)) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        toggleMenu();
     }
 
     function applyToCalendar(calendar) {
@@ -275,10 +316,10 @@
             return;
         }
         var btn = timezoneButton();
-        if (menuEl && menuEl.contains(event.target)) {
+        if (menuEl && hitNode(menuEl, event)) {
             return;
         }
-        if (btn && btn.contains(event.target)) {
+        if (hitNode(btn, event)) {
             return;
         }
         closeMenu();
@@ -290,7 +331,8 @@
         updateToolbar();
 
         document.addEventListener('timezone', onAirflowTimezoneChange);
-        document.addEventListener('click', onDocumentClick);
+        document.addEventListener('click', onToolbarClick, true);
+        document.addEventListener('mousedown', onDocumentClick);
         window.addEventListener('resize', function () {
             if (menuOpen) {
                 positionMenu();

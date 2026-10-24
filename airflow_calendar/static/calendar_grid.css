@@ -9,6 +9,11 @@
     transform: translateY(1px);
 }
 
+.calendar-tz-menu[hidden],
+.calendar-filter-panel[hidden] {
+    display: none !important;
+}
+
 .calendar-tz-menu {
     position: fixed;
     z-index: 1100;
@@ -73,6 +78,308 @@ html[data-color-mode="dark"] .calendar-tz-option.is-active,
 body.dark-mode .calendar-tz-option.is-active {
     background: #1d4ed8;
     color: #fff;
+}
+
+/* ── DAG filter (FullCalendar toolbar) ── */
+#calendar-container {
+    position: relative;
+}
+
+.fc .fc-filter-button::after {
+    content: "";
+    display: inline-block;
+    margin-left: 6px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    transform: translateY(1px);
+}
+
+.fc .fc-filter-button.calendar-filter-button-on {
+    font-weight: 700;
+}
+
+.calendar-filter-panel {
+    position: fixed;
+    z-index: 1100;
+    width: 320px;
+    max-height: 70vh;
+    max-height: min(70vh, 560px);
+    overflow: auto;
+    padding: 12px;
+    background: #fff;
+    color: #202124;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.calendar-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.calendar-filter-title {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.calendar-filter-clear {
+    border: 0;
+    background: transparent;
+    color: #174ea6;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.calendar-filter-clear:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.calendar-filter-summary {
+    margin: 2px 0 8px;
+    color: #5f6368;
+    font-size: 12px;
+}
+
+.calendar-filter-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 10px 0 4px;
+    font-weight: 600;
+}
+
+.calendar-filter-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 6px 8px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    color: #202124;
+    font: inherit;
+    font-size: 13px;
+}
+
+.calendar-filter-input:focus {
+    outline: none;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.calendar-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.calendar-filter-chips:empty {
+    display: none;
+}
+
+.calendar-filter-chips:not(:empty) {
+    margin-bottom: 4px;
+}
+
+.calendar-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 2px 4px 2px 8px;
+    border-radius: 999px;
+    background: #e8f0fe;
+    color: #174ea6;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.calendar-filter-chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.calendar-filter-chip-remove {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+    cursor: pointer;
+}
+
+.calendar-filter-suggestions {
+    margin-top: 4px;
+    max-height: 160px;
+    overflow: auto;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.calendar-filter-suggestions[hidden] {
+    display: none !important;
+}
+
+.calendar-filter-suggestion {
+    display: block;
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    background: transparent;
+    color: #202124;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.calendar-filter-suggestion:hover {
+    background: #f1f3f4;
+}
+
+.calendar-filter-mode {
+    display: inline-flex;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.calendar-filter-mode button {
+    border: 0;
+    background: transparent;
+    color: #202124;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    cursor: pointer;
+}
+
+.calendar-filter-mode button.is-active {
+    background: #e8f0fe;
+    color: #174ea6;
+}
+
+.calendar-filter-statuses {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.calendar-filter-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.calendar-filter-empty {
+    position: absolute;
+    z-index: 4;
+    top: 46%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #5f6368;
+    font-size: 14px;
+    pointer-events: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.calendar-filter-empty[hidden] {
+    display: none !important;
+}
+
+html[data-theme="dark"] .calendar-filter-panel,
+html[data-color-mode="dark"] .calendar-filter-panel,
+body.dark-mode .calendar-filter-panel {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .calendar-filter-clear,
+html[data-color-mode="dark"] .calendar-filter-clear,
+body.dark-mode .calendar-filter-clear {
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] .calendar-filter-summary,
+html[data-color-mode="dark"] .calendar-filter-summary,
+body.dark-mode .calendar-filter-summary,
+html[data-theme="dark"] .calendar-filter-empty,
+html[data-color-mode="dark"] .calendar-filter-empty,
+body.dark-mode .calendar-filter-empty {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .calendar-filter-input,
+html[data-color-mode="dark"] .calendar-filter-input,
+body.dark-mode .calendar-filter-input,
+html[data-theme="dark"] .calendar-filter-suggestions,
+html[data-color-mode="dark"] .calendar-filter-suggestions,
+body.dark-mode .calendar-filter-suggestions {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-color: #475569;
+}
+
+html[data-theme="dark"] .calendar-filter-suggestion,
+html[data-color-mode="dark"] .calendar-filter-suggestion,
+body.dark-mode .calendar-filter-suggestion,
+html[data-theme="dark"] .calendar-filter-mode button,
+html[data-color-mode="dark"] .calendar-filter-mode button,
+body.dark-mode .calendar-filter-mode button {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .calendar-filter-suggestion:hover,
+html[data-color-mode="dark"] .calendar-filter-suggestion:hover,
+body.dark-mode .calendar-filter-suggestion:hover {
+    background: #334155;
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .calendar-filter-chip,
+html[data-color-mode="dark"] .calendar-filter-chip,
+body.dark-mode .calendar-filter-chip,
+html[data-theme="dark"] .calendar-filter-mode button.is-active,
+html[data-color-mode="dark"] .calendar-filter-mode button.is-active,
+body.dark-mode .calendar-filter-mode button.is-active {
+    background: #1d4ed8;
+    color: #fff;
+}
+
+html[data-theme="dark"] .calendar-filter-mode,
+html[data-color-mode="dark"] .calendar-filter-mode,
+body.dark-mode .calendar-filter-mode {
+    border-color: #475569;
+}
+
+html[data-theme="dark"] .calendar-filter-empty,
+html[data-color-mode="dark"] .calendar-filter-empty,
+body.dark-mode .calendar-filter-empty {
+    background: rgba(30, 41, 59, 0.94);
 }
 
 /* ── Current time indicator ── */

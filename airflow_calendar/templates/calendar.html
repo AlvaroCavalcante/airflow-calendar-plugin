@@ -123,6 +123,7 @@
   <script src="{{ static_base }}/calendar_colors.js?v={{ assets_version }}"></script>
   <script src="{{ static_base }}/calendar_modal.js?v={{ assets_version }}"></script>
   <script src="{{ static_base }}/calendar_timezone.js?v={{ assets_version }}"></script>
+  <script src="{{ static_base }}/calendar_filter.js?v={{ assets_version }}"></script>
   <script>
     function syncAf2ModalTheme() {
       var html = document.documentElement;
@@ -152,6 +153,7 @@
       AirflowCalendarModal.init();
       var colorPicker;
       var calendarEl = document.getElementById('calendar');
+      var calendarEvents = AirflowCalendarFilter.prepare({{ events | tojson }}, {{ dag_catalog | tojson }});
       var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         timeZone: AirflowCalendarTimezone.initial(),
@@ -161,15 +163,21 @@
             click: function () {
               AirflowCalendarTimezone.toggleMenu();
             }
+          },
+          filter: {
+            text: AirflowCalendarFilter.buttonLabel(),
+            click: function () {
+              AirflowCalendarFilter.togglePanel();
+            }
           }
         },
         headerToolbar: {
-          left: 'prev,next today timezone',
+          left: 'prev,next today timezone filter',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         nowIndicator: true,
-        events: {{ events | tojson }},
+        events: calendarEvents,
         slotDuration: '00:15:00',
         eventDisplay: 'block',
 
@@ -267,6 +275,7 @@
       });
       calendar.render();
       AirflowCalendarTimezone.init(calendar);
+      AirflowCalendarFilter.init(calendar);
       colorPicker = AirflowCalendarColors.init(calendar, '{{ colors_api_base }}');
     });
   </script>

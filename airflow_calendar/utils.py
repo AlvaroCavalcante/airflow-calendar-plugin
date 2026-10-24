@@ -358,3 +358,83 @@ def build_calendar_events(session, dags, dagbag, date_col, date_attr):
                     continue
 
     return events
+
+
+def eager_load_dag_tags(query):
+    """Eager-load DagModel.tags so the catalog does not query once per DAG."""
+    try:
+        from sqlalchemy.orm import selectinload
+        from airflow.models import DagModel
+    except Exception:
+        return query
+    if not hasattr(DagModel, 'tags'):
+        return query
+    try:
+        return query.options(selectinload(DagModel.tags))
+    except Exception:
+        return query
+
+
+def _dag_tag_names(dag):
+    raw_tags = getattr(dag, 'tags', None) or []
+    if isinstance(raw_tags, str):
+        raw_tags = [part.strip() for part in raw_tags.split(',') if part.strip()]
+    names = []
+    seen = set()
+    for tag in raw_tags:
+        if isinstance(tag, str):
+            name = tag
+        else:
+            name = getattr(tag, 'name', None)
+        if not name:
+            continue
+        name = str(name).strip()
+        if name and name not in seen:
+            seen.add(name)
+            names.append(name)
+    names.sort()
+    return names
+
+
+def _dag_owner_names(dag):
+    raw_owners = getattr(dag, 'owners', None) or ''
+    if isinstance(raw_owners, (list, tuple, set)):
+        parts = raw_owners
+    else:
+        parts = str(raw_owners).split(',')
+    names = []
+    seen = set()
+    for part in parts:
+        name = str(part).strip()
+        if name and name not in seen:
+            seen.add(name)
+            names.append(name)
+    names.sort()
+    return names
+
+
+def build_dag_catalog(dags, events):
+    """One entry per DAG that produced at least one calendar event.
+
+    Tags and owners stay here, once per DAG, instead of being copied onto
+    every occurrence.
+    """
+    visible_ids = set()
+    for event in events or []:
+        props = event.get('extendedProps') or {}
+        dag_id = props.get('dag_id') or event.get('title')
+        if dag_id:
+            visible_ids.add(dag_id)
+
+    catalog = []
+    for dag in dags or []:
+        dag_id = getattr(dag, 'dag_id', None)
+        if not dag_id or dag_id not in visible_ids:
+            continue
+        catalog.append({
+            'dag_id': dag_id,
+            'tags': _dag_tag_names(dag),
+            'owners': _dag_owner_names(dag),
+        })
+    catalog.sort(key=lambda item: item['dag_id'])
+    return catalog

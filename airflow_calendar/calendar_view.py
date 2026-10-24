@@ -9,7 +9,11 @@ try:
     from airflow.utils.session import provide_session
     from airflow_calendar.dag_colors import load_dag_colors, save_dag_color
     from airflow_calendar.static_assets import load_modal_styles
-    from airflow_calendar.utils import build_calendar_events
+    from airflow_calendar.utils import (
+        build_calendar_events,
+        build_dag_catalog,
+        eager_load_dag_tags,
+    )
     _AF2_AVAILABLE = True
 except ImportError:
     _AF2_AVAILABLE = False
@@ -64,17 +68,20 @@ if _AF2_AVAILABLE:
             query = session.query(DagModel).filter(DagModel.is_paused == False)
             if hasattr(DagModel, 'is_active'):
                 query = query.filter(DagModel.is_active == True)
+            query = eager_load_dag_tags(query)
 
             dags = query.all()
             dagbag = DagBag(read_dags_from_db=True)
             events = build_calendar_events(
                 session, dags, dagbag, date_col, date_attr)
+            dag_catalog = build_dag_catalog(dags, events)
 
             return self.render_template(
                 "calendar.html",
                 events=events,
+                dag_catalog=dag_catalog,
                 colors_api_base="/airflow_calendar/api/colors",
                 static_base="/airflow_calendar/static",
                 modal_styles=load_modal_styles(),
-                assets_version="0.9.2",
+                assets_version="0.9.4",
             )
