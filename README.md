@@ -61,11 +61,6 @@ By leveraging color-coded borders, you can instantly see the health of your past
 
 ![Event border colors](assets/event_border_colors.png)
 
-## Timezone Display
-
-Scheduled events are computed in each DAG's timezone and stored as UTC instants. The calendar follows the Airflow UI timezone by default (the same Local / UTC / IANA choice from the clock in the navbar).
-
-A timezone button in the calendar toolbar (next to Today) lets you switch between **Airflow UI**, **UTC**, and **Local** without reloading the page. Pick a named zone such as `Europe/Paris` in the Airflow timezone menu, leave the calendar on **Airflow UI**, and the grid, modal, and recent-run timestamps update to that zone.
 
 ## Custom Event Coloring
 
