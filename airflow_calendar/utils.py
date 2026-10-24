@@ -1,6 +1,7 @@
+from airflow_calendar.dag_colors import get_dag_color, load_dag_colors
 import re
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 
 from croniter import croniter
 from sqlalchemy import desc
@@ -9,7 +10,8 @@ from airflow.models import DagRun
 from airflow.models.serialized_dag import SerializedDagModel
 from airflow.utils import timezone
 
-from airflow_calendar.dag_colors import get_dag_color, load_dag_colors
+UTC = dt_timezone.utc
+
 
 IGNORED_DAGS = ["airflow_monitoring"]
 RUNS_COUNT = 5000
@@ -96,13 +98,58 @@ def _format_duration(avg_seconds):
     return f"{int(avg_seconds / 60)}m {int(avg_seconds % 60)}s"
 
 
+def _coerce_tz(tz):
+    """Return a tzinfo from a DAG timezone (pendulum, zoneinfo, or IANA string)."""
+    if tz is None:
+        return UTC
+    if isinstance(tz, str):
+        name = tz.strip()
+        if not name or name.lower() in ('utc', 'gmt', 'etc/utc'):
+            return UTC
+        try:
+            import pendulum
+            return pendulum.timezone(name)
+        except Exception:
+            from zoneinfo import ZoneInfo
+            return ZoneInfo(name)
+    return tz
+
+
+def _make_aware(dt, tz):
+    if dt is None:
+        return None
+    if getattr(dt, 'tzinfo', None) is not None:
+        return dt
+    tz = _coerce_tz(tz)
+    convert = getattr(tz, 'convert', None)
+    if convert is not None:
+        return convert(dt.replace(fold=1))
+    localize = getattr(tz, 'localize', None)
+    if localize is not None:
+        return localize(dt)
+    return dt.replace(tzinfo=tz, fold=1)
+
+
+def _make_naive(dt, tz):
+    if dt is None:
+        return None
+    if getattr(dt, 'tzinfo', None) is None:
+        dt = dt.replace(tzinfo=UTC)
+    local = dt.astimezone(_coerce_tz(tz))
+    return datetime(
+        local.year, local.month, local.day,
+        local.hour, local.minute, local.second,
+    )
+
+
 def _utc_naive(dt):
     """Normalize any datetime to a naive UTC wall-clock (no microseconds)."""
     if dt is None:
         return None
     if getattr(dt, 'tzinfo', None) is None:
-        dt = timezone.make_aware(dt, timezone.utc)
-    utc_dt = timezone.convert_to_utc(dt)
+        utc_dt = dt.replace(tzinfo=UTC)
+    else:
+        utc_dt = dt.astimezone(UTC)
     return datetime(
         utc_dt.year, utc_dt.month, utc_dt.day,
         utc_dt.hour, utc_dt.minute, utc_dt.second,
@@ -115,23 +162,28 @@ def _utc_iso_z(dt):
 
 
 def _resolve_dag_timezone(session, dagbag, dag):
-    tz = getattr(dag, 'timezone', None)
-    if tz is not None:
-        return tz
+    candidates = [getattr(dag, 'timezone', None)]
+    try:
+        ser_dag = SerializedDagModel.get(dag.dag_id, session=session)
+        if ser_dag:
+            candidates.append(getattr(ser_dag.dag, 'timezone', None))
+    except Exception:
+        pass
+    try:
+        loaded_dag = dagbag.get_dag(dag.dag_id) if dagbag else None
+        if loaded_dag:
+            candidates.append(getattr(loaded_dag, 'timezone', None))
+    except Exception:
+        pass
 
-    ser_dag = SerializedDagModel.get(dag.dag_id, session=session)
-    if ser_dag:
-        tz = getattr(ser_dag.dag, 'timezone', None)
-        if tz is not None:
-            return tz
-
-    loaded_dag = dagbag.get_dag(dag.dag_id) if dagbag else None
-    if loaded_dag:
-        tz = getattr(loaded_dag, 'timezone', None)
-        if tz is not None:
-            return tz
-
-    return timezone.utc
+    for tz in candidates:
+        if tz is None:
+            continue
+        try:
+            return _coerce_tz(tz)
+        except Exception:
+            continue
+    return UTC
 
 
 def _build_history_data(recent_runs, date_attr, limit=5):
@@ -170,12 +222,12 @@ def _make_calendar_event(dag, event_time, avg_seconds, bg_color, border_color,
 
 def _add_cron_events(events, dag, schedule, cron_start, cron_end, run_history,
                      avg_seconds, bg_color, task_count, history_data, dag_tz):
-    start_utc = timezone.make_aware(cron_start, timezone.utc)
-    cron_start_local = timezone.make_naive(start_utc, dag_tz)
+    start_utc = _make_aware(cron_start, UTC)
+    cron_start_local = _make_naive(start_utc, dag_tz)
     cron = croniter(schedule, cron_start_local)
     for _ in range(RUNS_COUNT):
         event_local = cron.get_next(datetime)
-        event_aware = timezone.make_aware(event_local, dag_tz)
+        event_aware = _make_aware(event_local, dag_tz)
         event_time = _utc_naive(event_aware)
         if event_time > cron_end:
             break
