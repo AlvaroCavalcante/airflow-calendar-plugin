@@ -426,3 +426,92 @@ body.dark-mode .fc .fc-day-today .fc-timegrid-col-frame,
 body.dark-mode .fc .fc-day-today .fc-daygrid-day-frame {
     background-color: rgba(255, 193, 7, 0.10) !important;
 }
+
+/* ── Grouped DAGs at the same start ── */
+.calendar-group-event {
+    overflow: hidden;
+    color: #fff;
+}
+
+.fc-event.calendar-group-block {
+    color: #fff;
+}
+
+.calendar-group-panel {
+    position: fixed;
+    z-index: 1100;
+    width: 280px;
+    max-height: 70vh;
+    max-height: min(70vh, 360px);
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    color: #202124;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+    font-size: 13px;
+}
+
+.calendar-group-panel[hidden] {
+    display: none !important;
+}
+
+.calendar-group-title {
+    padding: 10px 12px 6px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.calendar-group-list {
+    overflow: auto;
+    padding: 0 4px 6px;
+}
+
+.calendar-group-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.calendar-group-row:hover {
+    background: #f1f3f4;
+}
+
+.calendar-group-dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.calendar-group-id {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html[data-theme="dark"] .calendar-group-panel,
+html[data-color-mode="dark"] .calendar-group-panel,
+body.dark-mode .calendar-group-panel {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .calendar-group-row:hover,
+html[data-color-mode="dark"] .calendar-group-row:hover,
+body.dark-mode .calendar-group-row:hover {
+    background: #334155;
+    color: #f8fafc;
+}

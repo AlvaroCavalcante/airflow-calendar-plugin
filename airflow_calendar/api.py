@@ -72,7 +72,7 @@ def index(request: Request, session=None):
                 "colors_api_base": "/calendar/api/colors",
                 "static_base": "/calendar/static",
                 "modal_styles": load_modal_styles(),
-                "assets_version": "0.9.4",
+                "assets_version": "0.10.0",
             })
             return HTMLResponse(content=html_content)
         except Exception as e:

@@ -83,5 +83,5 @@ if _AF2_AVAILABLE:
                 colors_api_base="/airflow_calendar/api/colors",
                 static_base="/airflow_calendar/static",
                 modal_styles=load_modal_styles(),
-                assets_version="0.9.4",
+                assets_version="0.10.0",
             )

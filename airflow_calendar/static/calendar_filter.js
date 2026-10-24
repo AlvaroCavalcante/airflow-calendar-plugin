@@ -300,11 +300,24 @@
         ui.summary.textContent = dagCountLabel(dagCount(events));
     }
 
+    function displayEvents(events) {
+        var copies = events.map(cloneEvent);
+        if (global.AirflowCalendarGroups &&
+                typeof global.AirflowCalendarGroups.collapse === 'function') {
+            return global.AirflowCalendarGroups.collapse(copies);
+        }
+        return copies;
+    }
+
     function applyToCalendar(calendar) {
         var target = calendar || boundCalendar;
         var visible = matchingEvents();
+        if (global.AirflowCalendarGroups &&
+                typeof global.AirflowCalendarGroups.close === 'function') {
+            global.AirflowCalendarGroups.close();
+        }
         if (target) {
-            var copies = visible.map(cloneEvent);
+            var copies = displayEvents(visible);
             var render = function () {
                 target.removeAllEventSources();
                 target.addEventSource(copies);
@@ -791,7 +804,7 @@
         allEvents = (events || []).map(cloneEvent);
         indexCatalog(catalog);
         filter = loadFilter();
-        return matchingEvents().map(cloneEvent);
+        return displayEvents(matchingEvents());
     }
 
     function patchDagColor(dagId, color) {

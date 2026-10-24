@@ -109,7 +109,7 @@
   {% include '_event_modal.html' %}
 
 	<div class="calendar-plugin-footer">
-		<span>v0.9.2</span>
+		<span>v0.10.0</span>
 		<span class="separator">•</span>
 		<a id="github-link" href="https://github.com/AlvaroCavalcante/airflow-calendar-plugin" target="_blank" rel="noopener noreferrer" title="See on GitHub">
 			<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -123,6 +123,7 @@
   <script src="{{ static_base }}/calendar_colors.js?v={{ assets_version }}"></script>
   <script src="{{ static_base }}/calendar_modal.js?v={{ assets_version }}"></script>
   <script src="{{ static_base }}/calendar_timezone.js?v={{ assets_version }}"></script>
+  <script src="{{ static_base }}/calendar_groups.js?v={{ assets_version }}"></script>
   <script src="{{ static_base }}/calendar_filter.js?v={{ assets_version }}"></script>
   <script>
     function syncAf2ModalTheme() {
@@ -182,6 +183,9 @@
         eventDisplay: 'block',
 
         eventContent: function(arg) {
+          if (arg.event.extendedProps.grouped) {
+            return AirflowCalendarGroups.renderContent(arg);
+          }
           let dag_id = arg.event.extendedProps.dag_id;
           let task_count = arg.event.extendedProps.task_count || 0;
           let durationMs = arg.event.end - arg.event.start;
@@ -205,14 +209,27 @@
         },
 
         eventMouseEnter: function(info) {
+            if (info.event.extendedProps.grouped) {
+              info.el.title = AirflowCalendarGroups.tooltip(info.event);
+              return;
+            }
             info.el.title = "Status: " + info.event.extendedProps.status;
         },
         allDaySlot: false,
         eventOverlap: true,
 
         eventClick: function(info) {
-          const props = info.event.extendedProps;
-          const eventTime = AirflowCalendarTimezone.formatDate(info.event.start);
+          if (info.event.extendedProps.grouped) {
+            AirflowCalendarGroups.openList(info.event, info.jsEvent, showDagModal);
+            return;
+          }
+          showDagModal(info.event, info.jsEvent);
+        }
+      });
+
+      function showDagModal(source, jsEvent) {
+          const props = source.extendedProps;
+          const eventTime = AirflowCalendarTimezone.formatDate(source.start);
           const dagId = props.dag_id;
 
           document.getElementById('modalDagId').innerText = dagId;
@@ -269,10 +286,9 @@
 
           const modalDialog = document.querySelector('#eventModal .modal-dialog');
 
-          colorPicker.openForDag(dagId, info.event.backgroundColor);
-          AirflowCalendarModal.show(modalDialog, info.jsEvent.clientX, info.jsEvent.clientY);
-        }
-      });
+          colorPicker.openForDag(dagId, source.backgroundColor);
+          AirflowCalendarModal.show(modalDialog, jsEvent.clientX, jsEvent.clientY);
+      }
       calendar.render();
       AirflowCalendarTimezone.init(calendar);
       AirflowCalendarFilter.init(calendar);
