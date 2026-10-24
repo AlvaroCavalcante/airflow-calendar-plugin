@@ -1,3 +1,80 @@
+/* ── Timezone control (FullCalendar toolbar) ── */
+.fc .fc-timezone-button::after {
+    content: "";
+    display: inline-block;
+    margin-left: 6px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    transform: translateY(1px);
+}
+
+.calendar-tz-menu {
+    position: fixed;
+    z-index: 1100;
+    min-width: 148px;
+    padding: 4px;
+    background: #fff;
+    color: #202124;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+}
+
+.calendar-tz-option {
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: #202124;
+    font: inherit;
+    font-size: 0.875em;
+    text-align: left;
+    cursor: pointer;
+}
+
+.calendar-tz-option:hover {
+    background: #f1f3f4;
+    color: #202124;
+}
+
+.calendar-tz-option.is-active {
+    font-weight: 700;
+    background: #e8f0fe;
+    color: #174ea6;
+}
+
+html[data-theme="dark"] .calendar-tz-menu,
+html[data-color-mode="dark"] .calendar-tz-menu,
+body.dark-mode .calendar-tz-menu {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .calendar-tz-option,
+html[data-color-mode="dark"] .calendar-tz-option,
+body.dark-mode .calendar-tz-option {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .calendar-tz-option:hover,
+html[data-color-mode="dark"] .calendar-tz-option:hover,
+body.dark-mode .calendar-tz-option:hover {
+    background: #334155;
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .calendar-tz-option.is-active,
+html[data-color-mode="dark"] .calendar-tz-option.is-active,
+body.dark-mode .calendar-tz-option.is-active {
+    background: #1d4ed8;
+    color: #fff;
+}
+
 /* ── Current time indicator ── */
 .fc {
     --fc-now-indicator-color: #ea4335;

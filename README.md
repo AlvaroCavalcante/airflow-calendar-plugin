@@ -61,6 +61,7 @@ By leveraging color-coded borders, you can instantly see the health of your past
 
 ![Event border colors](assets/event_border_colors.png)
 
+
 ## Custom Event Coloring
 
 When managing complex production environments, it's common to have pipelines with different levels of criticality and use cases.

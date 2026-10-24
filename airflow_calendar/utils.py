@@ -1,3 +1,4 @@
+from airflow_calendar.dag_colors import get_dag_color, load_dag_colors
 import re
 import hashlib
 from datetime import datetime, timedelta, timezone as dt_timezone
@@ -9,7 +10,8 @@ from airflow.models import DagRun
 from airflow.models.serialized_dag import SerializedDagModel
 from airflow.utils import timezone
 
-from airflow_calendar.dag_colors import get_dag_color, load_dag_colors
+UTC = dt_timezone.utc
+
 
 IGNORED_DAGS = ["airflow_monitoring"]
 RUNS_COUNT = 5000
@@ -96,6 +98,94 @@ def _format_duration(avg_seconds):
     return f"{int(avg_seconds / 60)}m {int(avg_seconds % 60)}s"
 
 
+def _coerce_tz(tz):
+    """Return a tzinfo from a DAG timezone (pendulum, zoneinfo, or IANA string)."""
+    if tz is None:
+        return UTC
+    if isinstance(tz, str):
+        name = tz.strip()
+        if not name or name.lower() in ('utc', 'gmt', 'etc/utc'):
+            return UTC
+        try:
+            import pendulum
+            return pendulum.timezone(name)
+        except Exception:
+            from zoneinfo import ZoneInfo
+            return ZoneInfo(name)
+    return tz
+
+
+def _make_aware(dt, tz):
+    if dt is None:
+        return None
+    if getattr(dt, 'tzinfo', None) is not None:
+        return dt
+    tz = _coerce_tz(tz)
+    convert = getattr(tz, 'convert', None)
+    if convert is not None:
+        return convert(dt.replace(fold=1))
+    localize = getattr(tz, 'localize', None)
+    if localize is not None:
+        return localize(dt)
+    return dt.replace(tzinfo=tz, fold=1)
+
+
+def _make_naive(dt, tz):
+    if dt is None:
+        return None
+    if getattr(dt, 'tzinfo', None) is None:
+        dt = dt.replace(tzinfo=UTC)
+    local = dt.astimezone(_coerce_tz(tz))
+    return datetime(
+        local.year, local.month, local.day,
+        local.hour, local.minute, local.second,
+    )
+
+
+def _utc_naive(dt):
+    """Normalize any datetime to a naive UTC wall-clock (no microseconds)."""
+    if dt is None:
+        return None
+    if getattr(dt, 'tzinfo', None) is None:
+        utc_dt = dt.replace(tzinfo=UTC)
+    else:
+        utc_dt = dt.astimezone(UTC)
+    return datetime(
+        utc_dt.year, utc_dt.month, utc_dt.day,
+        utc_dt.hour, utc_dt.minute, utc_dt.second,
+    )
+
+
+def _utc_iso_z(dt):
+    naive = _utc_naive(dt)
+    return naive.isoformat() + 'Z'
+
+
+def _resolve_dag_timezone(session, dagbag, dag):
+    candidates = [getattr(dag, 'timezone', None)]
+    try:
+        ser_dag = SerializedDagModel.get(dag.dag_id, session=session)
+        if ser_dag:
+            candidates.append(getattr(ser_dag.dag, 'timezone', None))
+    except Exception:
+        pass
+    try:
+        loaded_dag = dagbag.get_dag(dag.dag_id) if dagbag else None
+        if loaded_dag:
+            candidates.append(getattr(loaded_dag, 'timezone', None))
+    except Exception:
+        pass
+
+    for tz in candidates:
+        if tz is None:
+            continue
+        try:
+            return _coerce_tz(tz)
+        except Exception:
+            continue
+    return UTC
+
+
 def _build_history_data(recent_runs, date_attr, limit=5):
     history = []
     for run in reversed(recent_runs[:limit]):
@@ -104,17 +194,18 @@ def _build_history_data(recent_runs, date_attr, limit=5):
             continue
         history.append({
             "state": run.state,
-            "date": run_date.strftime('%d/%m/%Y %H:%M'),
+            "date": _utc_iso_z(run_date),
         })
     return history
 
 
 def _make_calendar_event(dag, event_time, avg_seconds, bg_color, border_color,
                          status, schedule, task_count, history_data):
+    start = _utc_naive(event_time)
     return {
         "title": dag.dag_id,
-        "start": event_time.isoformat() + 'Z',
-        "end": (event_time + timedelta(seconds=avg_seconds)).isoformat() + 'Z',
+        "start": start.isoformat() + 'Z',
+        "end": (start + timedelta(seconds=avg_seconds)).isoformat() + 'Z',
         "backgroundColor": bg_color,
         "borderColor": border_color,
         "borderWidth": "3px",
@@ -130,14 +221,18 @@ def _make_calendar_event(dag, event_time, avg_seconds, bg_color, border_color,
 
 
 def _add_cron_events(events, dag, schedule, cron_start, cron_end, run_history,
-                     avg_seconds, bg_color, task_count, history_data):
-    cron = croniter(schedule, cron_start)
+                     avg_seconds, bg_color, task_count, history_data, dag_tz):
+    start_utc = _make_aware(cron_start, UTC)
+    cron_start_local = _make_naive(start_utc, dag_tz)
+    cron = croniter(schedule, cron_start_local)
     for _ in range(RUNS_COUNT):
-        event_time = cron.get_next(datetime)
+        event_local = cron.get_next(datetime)
+        event_aware = _make_aware(event_local, dag_tz)
+        event_time = _utc_naive(event_aware)
         if event_time > cron_end:
             break
 
-        current_iso = event_time.replace(microsecond=0).isoformat()
+        current_iso = event_time.isoformat()
         status = run_history.get(current_iso, "no_run")
         events.append(_make_calendar_event(
             dag, event_time, avg_seconds, bg_color,
@@ -148,13 +243,13 @@ def _add_cron_events(events, dag, schedule, cron_start, cron_end, run_history,
 
 def _timedelta_anchor_time(dag, recent_runs, date_attr):
     """Pick a reference instant to project timedelta slots (like cron uses cron_start)."""
-    now_naive = datetime.now(dt_timezone.utc).replace(tzinfo=None)
+    now_naive = _utc_naive(timezone.utcnow())
 
     for run in recent_runs:
         run_date = getattr(run, date_attr, None)
         if run_date is None:
             continue
-        run_time = run_date.replace(tzinfo=None)
+        run_time = _utc_naive(run_date)
         if run_time <= now_naive:
             return run_time
 
@@ -163,11 +258,11 @@ def _timedelta_anchor_time(dag, recent_runs, date_attr):
         if run_date is None:
             continue
         # Airflow 2 may only have the next scheduled run before the first execution.
-        return run_date.replace(tzinfo=None)
+        return _utc_naive(run_date)
 
     next_dagrun = getattr(dag, 'next_dagrun', None)
     if next_dagrun is not None:
-        return next_dagrun.replace(tzinfo=None)
+        return _utc_naive(next_dagrun)
 
     return None
 
@@ -186,7 +281,7 @@ def _add_timedelta_events(events, dag, schedule, schedule_delta, recent_runs,
 
     rendered_count = 0
     while current_event_time <= cron_end and rendered_count < RUNS_COUNT:
-        current_iso = current_event_time.replace(microsecond=0).isoformat()
+        current_iso = _utc_naive(current_event_time).isoformat()
         status = run_history.get(current_iso, "no_run")
         events.append(_make_calendar_event(
             dag, current_event_time, avg_seconds, bg_color,
@@ -203,8 +298,8 @@ def build_calendar_events(session, dags, dagbag, date_col, date_attr):
     start_search = now - timedelta(days=7)
     end_search = now + timedelta(days=7)
 
-    cron_start = start_search.replace(tzinfo=None)
-    cron_end = end_search.replace(tzinfo=None)
+    cron_start = _utc_naive(start_search)
+    cron_end = _utc_naive(end_search)
     dag_colors = load_dag_colors()
 
     for dag in dags:
@@ -220,10 +315,12 @@ def build_calendar_events(session, dags, dagbag, date_col, date_attr):
             date_col <= end_search,
         ).all()
 
-        run_history = {
-            getattr(run, date_attr).replace(tzinfo=None, microsecond=0).isoformat(): run.state
-            for run in dag_runs
-        }
+        run_history = {}
+        for run in dag_runs:
+            run_date = getattr(run, date_attr, None)
+            if run_date is None:
+                continue
+            run_history[_utc_naive(run_date).isoformat()] = run.state
 
         recent_runs = session.query(DagRun).filter(
             DagRun.dag_id == dag.dag_id,
@@ -240,10 +337,11 @@ def build_calendar_events(session, dags, dagbag, date_col, date_attr):
 
         if schedule and isinstance(schedule, str) and croniter.is_valid(schedule):
             try:
+                dag_tz = _resolve_dag_timezone(session, dagbag, dag)
                 _add_cron_events(
                     events, dag, schedule, cron_start, cron_end,
                     run_history, avg_seconds, bg_color,
-                    task_count, history_data,
+                    task_count, history_data, dag_tz,
                 )
             except Exception:
                 continue
